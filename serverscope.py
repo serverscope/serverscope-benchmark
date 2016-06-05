@@ -455,7 +455,7 @@ try:
          '-H','Content-Type: application/json',
          '-H','Accept: application/json',
          '-d', json.dumps(payload),
-         'https://serverscope/api/trials'])
+         'https://serverscope.io/api/trials'])
 finally:
     os.chdir(current_path)
     shutil.rmtree('./serverscope')
