@@ -458,4 +458,4 @@ try:
          'https://serverscope/api/trials'])
 finally:
     os.chdir(current_path)
-    #shutil.rmtree('./serverscope')
+    shutil.rmtree('./serverscope')
