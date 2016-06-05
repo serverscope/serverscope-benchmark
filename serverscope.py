@@ -377,7 +377,7 @@ try:
     ###                              FIO                                         ###
     ################################################################################
     if ('fio' in to_run):
-        fio_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/benchmarks/fio-2.8.tar.gz'
+        fio_url = 'https://codeload.github.com/axboe/fio/tar.gz/fio-2.8'
         print_(c.GREEN + 'Downloading & building fio from %s ' % fio_url + c.RESET)
 
         fio_dir = './fio-fio-2.8'
@@ -435,7 +435,7 @@ try:
     ###                           UNIX BENCH                                     ###
     ################################################################################
     if ('unixbench' in to_run):
-        unixbench_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/benchmarks/unixbench-5.1.3-patched.tar.gz'
+        unixbench_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/master/benchmarks/unixbench-5.1.3-patched.tar.gz'
         unixbench_dir = './byte-unixbench'
 
         print_(c.GREEN + 'Downloading & running UnixBench from %s' % unixbench_url + c.RESET)
@@ -458,4 +458,4 @@ try:
          'https://serverscope/api/trials'])
 finally:
     os.chdir(current_path)
-    shutil.rmtree('./serverscope')
+    #shutil.rmtree('./serverscope')
