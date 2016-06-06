@@ -88,8 +88,12 @@ except ImportError:
 
 def run_and_print(command, cwd=None, catch_stderr = False):
     devnull = open('devnull', 'a+')
+    if catch_stderr:
+        err_pipe = subprocess.PIPE
+    else:
+        err_pipe = subprocess.STDOUT
 
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, cwd=cwd, stderr=subprocess.PIPE)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, cwd=cwd, stderr=err_pipe)
     r = ''
     while True:
         if catch_stderr:
@@ -97,13 +101,12 @@ def run_and_print(command, cwd=None, catch_stderr = False):
         else:
             out = p.stdout.read(1)
 
-        if out == '' and p.poll() != None:
-            break
         sys.stdout.write(out)
         sys.stdout.flush()
         r += out
 
-
+        if p.poll() != None:
+            break
         devnull.close()
     return r
 
