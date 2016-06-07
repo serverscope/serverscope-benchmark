@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+import os, sys, stat, platform
 devnull = open(os.devnull, 'w')
 
-import sys
-import platform
-import math
 import re
 import subprocess
 import tarfile
@@ -100,14 +97,13 @@ def run_and_print(command, cwd=None, catch_stderr = False):
             out = p.stderr.read(1)
         else:
             out = p.stdout.read(1)
-
+        if out == "" and p.poll() != None:
+            break
         sys.stdout.write(out)
         sys.stdout.flush()
         r += out
 
-        if p.poll() != None:
-            break
-        devnull.close()
+    devnull.close()
     return r
 
 def get_sys_info(obj):
@@ -446,7 +442,20 @@ try:
         subprocess.call(['curl','-s','-L','-o','unixbench.tar.gz',unixbench_url], stdout=devnull)
         tar = tarfile.open("unixbench.tar.gz"); tar.extractall(); tar.close()
         os.remove('unixbench.tar.gz')
-        benchmarks['unixbench'] =  run_and_print(['./Run'], cwd='%s/UnixBench' % unixbench_dir)
+
+        # if UnixBench launched directly from Python it might not finish properly
+        # see https://code.google.com/archive/p/byte-unixbench/issues/1
+        # Works just fine if we run it via shell script #magic
+        f = open('unixbench-run','w')
+        f.write('#!/bin/bash\n')
+        f.write('cd %s/UnixBench\n' % unixbench_dir)
+        f.write('./Run')
+        f.close()
+        os.chmod('unixbench-run',stat.S_IRWXU)
+
+        benchmarks['unixbench'] =  run_and_print(['./unixbench-run'])
+
+        remove('unixbench.tar.gz')
         shutil.rmtree(unixbench_dir, True)
 
     payload['benchmarks'] = benchmarks
