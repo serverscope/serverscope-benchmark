@@ -358,14 +358,14 @@ try:
     if ('dd' in to_run):
         dd_size = int(ram['ram_mb']/32)
         dd_str = "dd if=/dev/zero of=benchmark bs=64k count=%sk conv=fdatasync" % dd_size
-        print_(c.GREEN + "Running dd as follows:\n  " + dd_str)
+        print_(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
         benchmarks['dd'] = {}
         benchmarks['dd'][0] = dd_str + "\n" + \
             run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64k', 'count=%sk' % dd_size, 'conv=fdatasync'], catch_stderr = True)
 
         dd_size = int(ram['ram_mb']*2)
         dd_str = "dd if=/dev/zero of=benchmark bs=1M count=%s conv=fdatasync" % dd_size
-        print_("  " + dd_str)
+        print_(c.GREEN + "  " + dd_str + c.RESET)
         benchmarks['dd'][1] =  dd_str + "\n" + \
             run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync'], catch_stderr = True)
 
@@ -453,9 +453,9 @@ try:
         f.close()
         os.chmod('unixbench-run',stat.S_IRWXU)
 
-        benchmarks['unixbench'] =  run_and_print(['./unixbench-run'])
+        benchmarks['unixbench-run'] =  run_and_print(['./unixbench-run'])
 
-        remove('unixbench.tar.gz')
+        os.remove('unixbench.tar.gz')
         shutil.rmtree(unixbench_dir, True)
 
     payload['benchmarks'] = benchmarks
