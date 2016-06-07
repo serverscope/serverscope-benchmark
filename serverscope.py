@@ -455,7 +455,7 @@ try:
 
         benchmarks['unixbench-run'] =  run_and_print(['./unixbench-run'])
 
-        os.remove('unixbench.tar.gz')
+        os.remove('unixbench-run')
         shutil.rmtree(unixbench_dir, True)
 
     payload['benchmarks'] = benchmarks
