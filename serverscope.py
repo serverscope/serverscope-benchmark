@@ -8,6 +8,7 @@ import re
 import subprocess
 import tarfile
 import shutil
+import signal
 
 class c:
     PURPLE = '\033[95m'
@@ -83,28 +84,23 @@ except ImportError:
 
 ################################################################################
 
-def run_and_print(command, cwd=None, catch_stderr = False):
-    devnull = open('devnull', 'a+')
-    if catch_stderr:
-        err_pipe = subprocess.PIPE
-    else:
-        err_pipe = subprocess.STDOUT
+def restore_signals(): # from http://hg.python.org/cpython/rev/768722b2ae0a/
+    signals = ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ')
+    for sig in signals:
+        if hasattr(signal, sig):
+            signal.signal(getattr(signal, sig), signal.SIG_DFL)
 
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, cwd=cwd, stderr=err_pipe)
-    r = ''
-    while True:
-        if catch_stderr:
-            out = p.stderr.read(1)
-        else:
-            out = p.stdout.read(1)
-        if out == "" and p.poll() != None:
-            break
-        sys.stdout.write(out)
-        sys.stdout.flush()
-        r += out
-
-    devnull.close()
-    return r
+def run_and_print(command, cwd=None):
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1, cwd=cwd,
+              preexec_fn=restore_signals)
+    chunks = []
+    with p.stdout:
+        for chunk in iter(lambda: os.read(p.stdout.fileno(), 1 << 13), b''):
+           getattr(sys.stdout, 'buffer', sys.stdout).write(chunk)
+           sys.stdout.flush()
+           chunks.append(chunk)
+    p.wait()
+    return b''.join(chunks)
 
 def get_sys_info(obj):
     r = 'N/A'
@@ -361,13 +357,13 @@ try:
         print_(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
         benchmarks['dd'] = {}
         benchmarks['dd'][0] = dd_str + "\n" + \
-            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64k', 'count=%sk' % dd_size, 'conv=fdatasync'], catch_stderr = True)
+            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64k', 'count=%sk' % dd_size, 'conv=fdatasync'])
 
         dd_size = int(ram['ram_mb']*2)
         dd_str = "dd if=/dev/zero of=benchmark bs=1M count=%s conv=fdatasync" % dd_size
         print_(c.GREEN + "  " + dd_str + c.RESET)
         benchmarks['dd'][1] =  dd_str + "\n" + \
-            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync'], catch_stderr = True)
+            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync'])
 
         os.remove('benchmark')
         print_("", end = c.RESET)
@@ -443,22 +439,11 @@ try:
         tar = tarfile.open("unixbench.tar.gz"); tar.extractall(); tar.close()
         os.remove('unixbench.tar.gz')
 
-        # if UnixBench launched directly from Python it might not finish properly
-        # see https://code.google.com/archive/p/byte-unixbench/issues/1
-        # Works just fine if we run it via shell script #magic
-        f = open('unixbench-run','w')
-        f.write('#!/bin/bash\n')
-        f.write('cd %s/UnixBench\n' % unixbench_dir)
-        f.write('./Run')
-        f.close()
-        os.chmod('unixbench-run',stat.S_IRWXU)
-
-        benchmarks['unixbench-run'] =  run_and_print(['./unixbench-run'])
-
-        os.remove('unixbench-run')
+        benchmarks['unixbench'] =  run_and_print(['./Run'], cwd='%s/UnixBench' % unixbench_dir)
         shutil.rmtree(unixbench_dir, True)
 
     payload['benchmarks'] = benchmarks
+
     print_(c.GREEN + c.BOLD)
     print_("All done! Submitting the results..." + c.RESET)
 
