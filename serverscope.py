@@ -454,5 +454,6 @@ try:
          '-d', json.dumps(payload),
          'https://serverscope.io/api/trials'])
 finally:
+    devnull.close()
     os.chdir(current_path)
     shutil.rmtree('./serverscope')
