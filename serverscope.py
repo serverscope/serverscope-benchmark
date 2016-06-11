@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+################################################################################
+#                       Serverscope.io benchmark tool                          #
+################################################################################
+
 import os, sys, stat, platform
 devnull = open(os.devnull, 'w')
 
