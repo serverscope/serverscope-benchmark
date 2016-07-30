@@ -262,9 +262,6 @@ def ensure_dependencies(devnull):
         print_(c.GREEN + 'Installing ' + ", ".join(to_install)+c.RESET)
 
         try:
-            cmd1 = ['apt-get', 'update']
-            cmd2 = ['apt-get', '-y', 'install'] + packages
-
             if subprocess.call(cmd1) > 0:
                 raise Exception("Failed update")
             if subprocess.call(cmd2) > 0:
