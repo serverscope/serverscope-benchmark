@@ -242,7 +242,7 @@ def ensure_dependencies(devnull):
     to_install = []
 
     if (subprocess.call(['which','yum'], stdout=devnull, stderr=devnull) == 0):
-        packages = ['make', 'automake', 'gcc', 'gcc-c++', 'kernel-devel', 'libaio-devel']
+        packages = ['make', 'automake', 'gcc', 'gcc-c++', 'kernel-devel', 'libaio-devel','perl-Time-HiRes']
         installed = subprocess.Popen(['rpm', '-qa'], stdout=subprocess.PIPE).communicate()[0]
         for p in packages:
             if p not in installed:
