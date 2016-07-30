@@ -517,7 +517,7 @@ def get_selected_benchmark_classes(include):
 
 def post_results(data):
     encoded = urllib.urlencode(data)
-    curl = ['curl','-X','POST',
+    curl = ['curl','-k','-X','POST',
         '-H', 'Content-Type: application/x-www-form-urlencoded',
         '-H', 'Accept: text/plain',
         '-H', 'User-Agent: serverscope.io benchmark tool',
