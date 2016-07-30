@@ -104,14 +104,14 @@ def run_and_print(command, cwd=None):
               preexec_fn=restore_signals)
     chunks = []
     try:
-        for chunk in iter(lambda: os.read(p.stdout.fileno(), 1 << 13), b''):
+        for chunk in iter(lambda: os.read(p.stdout.fileno(), 1 << 13), ''):
            getattr(sys.stdout, 'buffer', sys.stdout).write(chunk)
            sys.stdout.flush()
            chunks.append(chunk)
     finally:
         p.stdout.close()
     p.wait()
-    return b''.join(chunks)
+    return ''.join(chunks)
 
 
 def get_sys_info(obj):
@@ -124,9 +124,10 @@ def get_sys_info(obj):
 
 
 def get_total_ram(meminfo):
-    match = re.search(r"MemTotal:\s+([0-9]+)\s", meminfo)
+    match = re.findall(r"DirectMap.+:\s+([0-9]+)\s", meminfo)
+
     if match:
-        ram = int(match.group(1)) #kB
+        ram = sum(map(int, match))
         ram = round(ram/1024) #MB
         ram_mb = ram
         if (ram > 1024):
@@ -205,8 +206,8 @@ def get_parser():
     except AttributeError:
         pass
 
-    parser.add_argument('-p','--plan', help='Required. Comma-separated ' +
-        'server provider and plan names as follows: "Plan name|Provider name"')
+    parser.add_argument('-p','--plan', help='Required. Server provider and plan' +
+                        ' names as follows: "Plan name|Provider name"')
     parser.add_argument('-e','--email', help='Required. An e-mail to receive online report link')
     parser.add_argument('-i','--include',
         help='Comma-separated list of benchmarks to run if you don\'t want to run all of them: ' +
@@ -243,12 +244,9 @@ def ensure_dependencies(devnull):
                 print_('Need to install %s' % p)
                 to_install.append(p)
         if to_install:
-            print_(c.GREEN + 'Installing ' + ", ".join(to_install)+c.RESET)
-            subprocess.call(['sudo', 'yum', 'update'])
-            cmd = ['sudo', 'yum', 'install', '-y'] + packages
-            if (subprocess.call(cmd) != 0):
-                print_(c.RED + 'Cannot install dependencies. Exiting.' + c.RESET)
-                sys.exit(1)
+            cmd1 = ['yum', 'update']
+            cmd2 = ['yum', 'install', '-y'] + packages
+
 
     elif (subprocess.call(['which','apt-get'],stdout=devnull, stderr=devnull )==0):
         packages = ['build-essential','libaio-dev']
@@ -257,15 +255,27 @@ def ensure_dependencies(devnull):
                 print_('Need to install %s' % p)
                 to_install.append(p)
         if to_install:
-            print_(c.GREEN + 'Installing ' + ", ".join(to_install)+c.RESET)
-            subprocess.call(['sudo', 'apt-get', 'update'])
-            cmd = ['sudo', 'apt-get',  '-y', 'install'] + packages
-            subprocess.call(cmd)
-    else:
-        print_()
-        print_(c.RED + 'Sorry, this system is not yet supported, make sure you install '
-            'all the dependencies manually' + c.RESET)
-        print_()
+            cmd1 = ['apt-get', 'update']
+            cmd2 = ['apt-get', '-y', 'install'] + packages
+
+    if to_install:
+        print_(c.GREEN + 'Installing ' + ", ".join(to_install)+c.RESET)
+
+        try:
+            cmd1 = ['apt-get', 'update']
+            cmd2 = ['apt-get', '-y', 'install'] + packages
+
+            if subprocess.call(cmd1) > 0:
+                raise Exception("Failed update")
+            if subprocess.call(cmd2) > 0:
+                raise Exception("Failed install")
+        except:
+            print_(c.RED + 'Error: Can\'t install dependencies.' + c.RESET)
+            print_(c.RED + 'Try restarting this script as root or installing packages manually:' + c.RESET)
+            print_('  ' + ' '.join(cmd1))
+            print_('  ' + ' '.join(cmd2))
+            sys.exit(1)
+
 
 def get_geo_info():
     """Return geo location information."""
@@ -315,14 +325,42 @@ class SpeedtestBenchmark(Benchmark):
     code = 'speedtest'
 
     def download(self):
-        url = 'https://raw.githubusercontent.com/anton-ko/speedtest/master/speedtest.py'
+        url = 'https://www.dropbox.com/s/jcazh0xflrcpeje/speedtest.py?dl=0'
         print_(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
         subprocess.call(['curl','-s','-L','-o','speedtest.py',url], stdout=self.stdout)
 
     def run(self):
-        print_(c.GREEN + "Running bandwidth test:" + c.RESET)
-
+        print_(c.GREEN + "Running speedtest benchmark:" + c.RESET)
         return run_and_print(["python","speedtest.py", "--verbose"])
+
+class DownloadBenchmark(Benchmark):
+    code = 'download'
+
+    def run(self):
+        print_(c.GREEN + "Running download benchmark:" + c.RESET)
+        url = 'http://cachefly.cachefly.net/100mb.test'
+        count = 10
+
+        print_(c.GREEN + " Downloading %s x%d" % (url, count) + c.RESET)
+
+        curl = ["curl", "-o", "/dev/null", "--silent", "--progress-bar",
+                "--write-out", 'Downloaded %{size_download} bytes in %{time_total} sec\n',
+                url]
+        result = []
+        size = 0
+        time = 0
+        for i in xrange(count):
+            s = run_and_print(curl)
+            match = re.search(r"Downloaded\s+([0-9]+)\sbytes\sin\s([0-9.]+)\ssec", s)
+            if match:
+                size += round(int(match.group(1)) / 1024 / 1024, 2) #megabytes
+                time += float(match.group(2)) #sec
+            result.append(s)
+        v = round(size * 8 / time, 2)
+        r = "Finished! Average download speed is %.2f Mbit/s" % v
+        result.append(r)
+        print_(c.GREEN + r + c.RESET)
+        return "".join(result)
 
 
 class DDBenchmark(Benchmark):
@@ -330,14 +368,18 @@ class DDBenchmark(Benchmark):
 
     def run(self):
         ram = get_total_ram(self.specs['meminfo'])
-        dd_size = int(ram['ram_mb']/32)
+        if ram['ram_mb'] <= 1024:
+            dd_size = 32
+        else:
+            dd_size = round(ram['ram_mb']/32)
+
         dd_str = "dd if=/dev/zero of=benchmark bs=64k count=%sk conv=fdatasync" % dd_size
         print_(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
         result = {}
         result["base64k"] = dd_str + "\n" + \
             run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64k', 'count=%sk' % dd_size, 'conv=fdatasync'])
 
-        dd_size = int(ram['ram_mb']*2)
+        dd_size = dd_size*64
         dd_str = "dd if=/dev/zero of=benchmark bs=1M count=%s conv=fdatasync" % dd_size
         print_(c.GREEN + "  " + dd_str + c.RESET)
         result["base1m"] = dd_str + "\n" + \
@@ -364,16 +406,22 @@ class FioBenchmark(Benchmark):
 
     def run(self):
         ram = get_total_ram(self.specs['meminfo'])
-        print_(c.GREEN + 'Running IO tests:' + c.RESET)
+        ram_mb = ram['ram_mb']
         jobs = 8
-        size = round(int(ram['ram_mb'])*2 / jobs)
+        print_(c.GREEN + 'Running IO tests:' + c.RESET)
+
+        if ram_mb <= 1024:
+            size = round(1024 / jobs)
+        else:
+            size = round(int(ram['ram_mb'])*2 / jobs)
         result = {}
+
 
         cmd = [
                 './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
                 '--runtime=60', '--ioengine=libaio', '--randrepeat=1',
                 '--iodepth=32', '--invalidate=1', '--verify=0',
-                '--verify_fatal=0', '--numjobs=8', '--rw=randread', '--blocksize=4k',
+                '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
                 '--group_reporting'
                 ]
         result['random-read'] = " ".join(cmd) + "\n" + \
@@ -382,7 +430,7 @@ class FioBenchmark(Benchmark):
         cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
              '--runtime=60', '--ioengine=libaio', '--randrepeat=1', '--iodepth=32',
              '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
-             '--numjobs=8', '--rw=randread', '--blocksize=4k',
+             '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
              '--group_reporting']
         result['random-read-direct'] = " ".join(cmd) + "\n" + \
             run_and_print(cmd, cwd = self._fio_dir)
@@ -390,7 +438,7 @@ class FioBenchmark(Benchmark):
         cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
              '--runtime=60', '--filename=benchmark', '--ioengine=libaio',
              '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
-             '--verify=0', '--verify_fatal=0', '--numjobs=8', '--rw=randwrite',
+             '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
              '--blocksize=4k', '--group_reporting']
         result['random-write-direct'] = " ".join(cmd) + "\n" + \
             run_and_print(cmd, cwd = self._fio_dir)
@@ -398,7 +446,7 @@ class FioBenchmark(Benchmark):
         cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
              '--filename=benchmark', '--ioengine=libaio', '--randrepeat=1',
              '--iodepth=32',  '--invalidate=1', '--verify=0',
-             '--verify_fatal=0', '--numjobs=8', '--rw=randwrite', '--blocksize=4k',
+             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
              '--group_reporting']
         result['random-write'] = " ".join(cmd) + "\n" + \
             run_and_print(cmd, cwd = self._fio_dir)
@@ -421,7 +469,6 @@ class UnixbenchBenchmark(Benchmark):
     def run(self):
         return run_and_print(['./Run'], cwd='%s/UnixBench' % self._unixbench_dir)
 
-
 class DummyBenchmark(Benchmark):
     code = 'dummy'
 
@@ -432,7 +479,8 @@ class DummyBenchmark(Benchmark):
         return "dummy"
 
 
-ALL_BENCHMARKS = [DummyBenchmark, SpeedtestBenchmark, DDBenchmark, FioBenchmark, UnixbenchBenchmark]
+ALL_BENCHMARKS = [SpeedtestBenchmark, DDBenchmark, FioBenchmark,
+                  UnixbenchBenchmark, DownloadBenchmark]
 
 
 def get_benchmark_class(code):
@@ -464,22 +512,15 @@ def get_selected_benchmark_classes(include):
 
 
 def post_results(data):
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'text/plain',
-        'User-Agent': 'serverscope.io benchmark tool'
-    }
-    #request = urllib2.Request('https://serverscope.io/api/trials', encoded)
-
     encoded = urllib.urlencode(data)
-    request = urllib2.Request('http://requestb.in/1mlbhqf1', encoded)
-
-    for x in headers:
-        request.add_header(x, headers[x])
-
-    response = urllib2.urlopen(request)
-    print_(response.read())
-    response.close()
+    curl = ['curl','-X','POST',
+        '-H', 'Content-Type: application/x-www-form-urlencoded',
+        '-H', 'Accept: text/plain',
+        '-H', 'User-Agent: serverscope.io benchmark tool',
+        '--data', encoded,
+        'https://serverscope.io/api/trials.txt'
+    ]
+    subprocess.call(curl)
 
 
 if __name__ == '__main__':
