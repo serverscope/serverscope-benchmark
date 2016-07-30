@@ -128,14 +128,19 @@ def get_total_ram(meminfo):
 
     if match:
         ram = sum(map(int, match))
-        ram = round(ram/1024) #MB
-        ram_mb = ram
-        if (ram > 1024):
-            ram_units = 'G'
-            ram = round(ram/1024)
-        else:
-            ram_units = 'M'
-        return {'ram':ram, 'units':ram_units, 'ram_mb':ram_mb}
+    else:
+        match = re.search(r"MemTotal:\s+([0-9]+)\s", meminfo)
+        ram = int(match.group(1)) #kB
+
+    ram = round(ram/1024) #MB
+    ram_mb = ram
+    if (ram > 1024):
+        ram_units = 'G'
+        ram = round(ram/1024)
+    else:
+        ram_units = 'M'
+    return {'ram':ram, 'units':ram_units, 'ram_mb':ram_mb}
+
     return 'N/A'
 
 
@@ -399,7 +404,9 @@ class FioBenchmark(Benchmark):
         subprocess.call(['curl','-s','-L','-o','fio.tar.gz',fio_url], stdout=self.stdout)
         tar = tarfile.open("fio.tar.gz"); tar.extractall(); tar.close()
         os.remove('fio.tar.gz')
-        subprocess.check_call(['make'], cwd = self._fio_dir,stdout=self.stdout)
+        if subprocess.call(['make'], cwd = self._fio_dir,stdout=self.stdout):
+            print_(c.RED + 'Couldn\'t build fio. Exiting.')
+            sys.exit(-1)
 
     def run(self):
         ram = get_total_ram(self.specs['meminfo'])
