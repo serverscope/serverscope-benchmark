@@ -341,7 +341,7 @@ class DownloadBenchmark(Benchmark):
     def run(self):
         print_(c.GREEN + "Running download benchmark:" + c.RESET)
         url = 'http://cachefly.cachefly.net/100mb.test'
-        count = 10
+        count = 5
 
         print_(c.GREEN + " Downloading %s x%d" % (url, count) + c.RESET)
 
