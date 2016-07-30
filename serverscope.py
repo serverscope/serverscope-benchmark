@@ -325,7 +325,7 @@ class SpeedtestBenchmark(Benchmark):
     code = 'speedtest'
 
     def download(self):
-        url = 'https://www.dropbox.com/s/jcazh0xflrcpeje/speedtest.py?dl=0'
+        url = 'https://raw.githubusercontent.com/anton-ko/speedtest/master/speedtest.py'
         print_(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
         subprocess.call(['curl','-s','-L','-o','speedtest.py',url], stdout=self.stdout)
 
