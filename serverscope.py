@@ -15,7 +15,6 @@ import tarfile
 import shutil
 import signal
 import tempfile
-import urllib2
 import urllib
 
 try:
@@ -124,6 +123,7 @@ def get_sys_info(obj):
 
 
 def get_total_ram(meminfo):
+    meminfo = meminfo.decode()
     match = re.findall(r"DirectMap.+:\s+([0-9]+)\s", meminfo)
 
     if match:
@@ -182,7 +182,7 @@ def get_total_disk():
         command.append(fs)
     df = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=devnull).communicate()[0]
 
-    lines = df.split('\n')[1:]
+    lines = df.decode().split(os.linesep)
     total = 0
     for line in lines:
         match = re.search(r'\S+\s+([0-9]+)', line)
