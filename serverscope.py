@@ -5,14 +5,23 @@
 #                       Serverscope.io benchmark tool                          #
 ################################################################################
 
-import os, sys, stat, platform
-devnull = open(os.devnull, 'w')
-
+import os
+import sys
+import stat
+import platform
 import re
 import subprocess
 import tarfile
 import shutil
 import signal
+import tempfile
+import urllib
+
+try:
+    from argparse import ArgumentParser as ArgParser
+except ImportError:
+    from optparse import OptionParser as ArgParser
+
 
 class c:
     PURPLE = '\033[95m'
@@ -23,6 +32,7 @@ class c:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
+
 
 try:
     import builtins
@@ -80,13 +90,14 @@ else:
     print_ = getattr(builtins, 'print')
     del builtins
 
-try:
-    from argparse import ArgumentParser as ArgParser
-except ImportError:
-    from optparse import OptionParser as ArgParser
 
+def urlencode_(data):
+    try:
+        from urllib import urlencode
+    except ImportError:
+        from urllib.parse import urlencode
+    return urlencode(data)
 
-################################################################################
 
 def restore_signals(): # from http://hg.python.org/cpython/rev/768722b2ae0a/
     signals = ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ')
@@ -94,39 +105,55 @@ def restore_signals(): # from http://hg.python.org/cpython/rev/768722b2ae0a/
         if hasattr(signal, sig):
             signal.signal(getattr(signal, sig), signal.SIG_DFL)
 
+
 def run_and_print(command, cwd=None):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1, cwd=cwd,
-              preexec_fn=restore_signals)
+              preexec_fn=restore_signals, universal_newlines=True)
     chunks = []
-    with p.stdout:
-        for chunk in iter(lambda: os.read(p.stdout.fileno(), 1 << 13), b''):
-           getattr(sys.stdout, 'buffer', sys.stdout).write(chunk)
-           sys.stdout.flush()
-           chunks.append(chunk)
+    try:
+        while True:
+            chunk = p.stdout.readline()
+            if chunk != '':
+                getattr(sys.stdout, 'buffer', sys.stdout).write(chunk.encode('utf-8'))
+                sys.stdout.flush()
+                chunks.append(chunk)
+            else:
+                break
+    finally:
+        p.stdout.close()
     p.wait()
-    return b''.join(chunks)
+    return ''.join(chunks)
 
-def get_sys_info(obj):
+
+def get_sys_info(obj, devnull):
     r = 'N/A'
     try:
-        r = subprocess.Popen(['cat','/proc/%s' % (obj)], stdout=subprocess.PIPE, stderr=devnull).communicate()[0]
+        r = subprocess.Popen(['cat','/proc/%s' % (obj)], stdout=subprocess.PIPE, stderr=devnull, universal_newlines=True).communicate()[0]
     except subprocess.CalledProcessError:
         print_('Warning: /proc/%s does not exist' % (obj))
     return r
 
+
 def get_total_ram(meminfo):
-    match = re.search(r"MemTotal:\s+([0-9]+)\s", meminfo)
+    match = re.findall(r"DirectMap.+:\s+([0-9]+)\s", meminfo)
+
     if match:
+        ram = sum(map(int, match))
+    else:
+        match = re.search(r"MemTotal:\s+([0-9]+)\s", meminfo)
         ram = int(match.group(1)) #kB
-        ram = round(ram/1024) #MB
-        ram_mb = ram
-        if (ram > 1024):
-            ram_units = 'G'
-            ram = round(ram/1024)
-        else:
-            ram_units = 'M'
-        return {'ram':ram, 'units':ram_units, 'ram_mb':ram_mb}
+
+    ram = round(ram/1024) #MB
+    ram_mb = ram
+    if (ram > 1024):
+        ram_units = 'G'
+        ram = round(ram/1024)
+    else:
+        ram_units = 'M'
+    return {'ram':ram, 'units':ram_units, 'ram_mb':ram_mb}
+
     return 'N/A'
+
 
 def get_cpu_info_val(property, cpuinfo):
     match = re.search(property + r"\s+:\s(.+)", cpuinfo)
@@ -135,6 +162,7 @@ def get_cpu_info_val(property, cpuinfo):
     else:
         return 'N/A'
 
+
 def get_cpu_info(cpuinfo):
     r = {}
     r['name'] = get_cpu_info_val('model name', cpuinfo);
@@ -142,6 +170,7 @@ def get_cpu_info(cpuinfo):
     r['cores'] = get_cpu_info_val('cpu cores', cpuinfo)
 
     return r
+
 
 def get_nodev_filesystems():
     r = [];
@@ -155,13 +184,14 @@ def get_nodev_filesystems():
         f.close()
     return r
 
-def get_total_disk():
+
+def get_total_disk(devnull):
     nodevs = get_nodev_filesystems()
     command = ['df']
     for fs in nodevs:
         command.append('-x')
         command.append(fs)
-    df = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=devnull).communicate()[0]
+    df = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=devnull, universal_newlines=True).communicate()[0]
 
     lines = df.split('\n')[1:]
     total = 0
@@ -172,6 +202,7 @@ def get_total_disk():
     total = round(total / 1000 / 1000)
     return {"output": df, "total": '%dGB' % total}
 
+
 def clean_up(dir, name = ""):
     files = os.listdir(dir)
     for file in files:
@@ -181,153 +212,103 @@ def clean_up(dir, name = ""):
         else:
             os.remove(os.path.join(dir,file))
 
-################################################################################
 
-
-parser = ArgParser(description = "ServerScope.io benchmark kit")
-# Give optparse.OptionParser an `add_argument` method for
-# compatibility with argparse.ArgumentParser
-try:
-    parser.add_argument = parser.add_option
-except AttributeError:
-    pass
-
-
-parser.add_argument('-p','--plan', help='Required. Server plan ID from ServerScope or '
-    'json-encoded array that contains server provider and plan names as follows:'
-    '"Plan name@Provider name", ')
-
-parser.add_argument('-e','--email', help='Required. An e-mail to receive online report link')
-parser.add_argument('-i','--include',
-    help='Comma-separated list of benchmarks to run if you don\'t want to run all of them: ' +
-        'dd, fio, speedtest, unixbench')
-
-parser.add_argument('--locale', default="en")
-
-
-options = parser.parse_args()
-if isinstance(options, tuple):
-    args = options[0]
-else:
-    args = options
-del options
-
-if not args is dict:
-    args = vars(args)
-
-mandatories = ['plan', 'email']
-for m in mandatories:
-    if (m not in args) or args[m] == None:
-        print_("Required parameter " + c.RED + c.BOLD + m + c.RESET + " is missing")
-        parser.print_help()
-        os._exit(1)
-
-benchmarks = ['fio','speedtest','dd','unixbench']
-
-to_run = []
-if (args['include']):
-    list = args['include'].split(',')
-    for t in list:
-        t = t.strip()
-        if (t in benchmarks):
-            to_run.append(t)
-        else:
-            print_("%s benchmark hasn't been recognised. Use these: " % t, end ="")
-            print_(','.join(benchmarks))
-    if len(to_run) == 0:
-        print_("No benchmarks selected. Running all...")
-        to_run = benchmarks
-else:
-    to_run = benchmarks
-
-del benchmarks
-
-payload = {"email": args["email"], "plan": args["plan"], "locale": args["locale"]}
-payload["os"] = platform.dist()
-
-to_install = []
-
-if (subprocess.call(['which','yum'], stdout=devnull, stderr=devnull) == 0): #yum
-    packages = ['make', 'automake', 'gcc', 'gcc-c++', 'kernel-devel', 'libaio-devel']
-    installed = subprocess.Popen(['rpm', '-qa'], stdout=subprocess.PIPE).communicate()[0]
-    for p in packages:
-        if p not in installed:
-            print_('Need to install %s' % p)
-            to_install.append(p)
-    if (len(to_install) > 0):
-        print_(c.GREEN + 'Installing ' + ", ".join(to_install)+c.RESET)
-        subprocess.call(['sudo', 'yum', 'update'])
-        cmd = ['sudo', 'yum', 'install', '-y'] + packages
-        if (subprocess.call(cmd) != 0):
-            print_(c.RED + 'Cannot install dependencies. Exiting.' + c.RESET)
-            os._exit(1)
-
-
-elif (subprocess.call(['which','apt-get'],stdout=devnull, stderr=devnull )==0):
-    packages = ['build-essential','libaio-dev']
-    for p in packages:
-        if (subprocess.call(['dpkg','-s',p], stdout=devnull, stderr=devnull )!=0):
-            print_('Need to install %s' % p)
-            to_install.append(p)
-    if (len(to_install) > 0):
-        print_(c.GREEN + 'Installing ' + ", ".join(to_install)+c.RESET)
-        subprocess.call(['sudo', 'apt-get', 'update'])
-        cmd = ['sudo', 'apt-get',  '-y', 'install'] + packages
-        subprocess.call(cmd)
-else:
-    print_()
-    print_(c.RED + 'Sorry, this system is not yet supported, make sure you install '
-        'all the dependencies manually' + c.RESET)
-    print_()
-
-current_path = os.getcwd()
-try:
-    if (os.path.isdir('./serverscope')):
-        shutil.rmtree('./serverscope')
-    os.mkdir('./serverscope')
-    os.chdir('./serverscope')
-
+def get_parser():
+    parser = ArgParser(description = "ServerScope.io benchmark kit")
+    # Give optparse.OptionParser an `add_argument` method for
+    # compatibility with argparse.ArgumentParser
     try:
-        import json
-    except ImportError:
+        parser.add_argument = parser.add_option
+    except AttributeError:
+        pass
+
+    parser.add_argument('-p','--plan', help='Required. Server provider and plan' +
+                        ' names as follows: "Plan name|Provider name"')
+    parser.add_argument('-e','--email', help='Required. An e-mail to receive online report link')
+    parser.add_argument('-i','--include',
+        help='Comma-separated list of benchmarks to run if you don\'t want to run all of them: ' +
+            'dd, fio, speedtest, unixbench')
+    parser.add_argument('--locale', default="en")
+
+    options = parser.parse_args()
+    if isinstance(options, tuple):
+        args = options[0]
+    else:
+        args = options
+
+    if not args is dict:
+        args = vars(args)
+
+    mandatories = ['plan', 'email']
+    for m in mandatories:
+        if (m not in args) or args[m] == None:
+            print_("Required parameter " + c.RED + c.BOLD + m + c.RESET + " is missing")
+            parser.print_help()
+            sys.exit(1)
+
+    return args
+
+
+def ensure_dependencies(devnull):
+    to_install = []
+
+    if (subprocess.call(['which','yum'], stdout=devnull, stderr=devnull) == 0):
+        packages = ['make', 'automake', 'gcc', 'gcc-c++', 'kernel-devel', 'libaio-devel','perl-Time-HiRes']
+        installed = subprocess.Popen(['rpm', '-qa'], stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
+        for p in packages:
+            if p not in installed:
+                print_('Need to install %s' % p)
+                to_install.append(p)
+        if to_install:
+            cmd1 = ['yum', 'update']
+            cmd2 = ['yum', 'install', '-y'] + packages
+
+
+    elif (subprocess.call(['which','apt-get'],stdout=devnull, stderr=devnull )==0):
+        packages = ['build-essential','libaio-dev']
+        for p in packages:
+            if (subprocess.call(['dpkg','-s',p], stdout=devnull, stderr=devnull )!=0):
+                print_('Need to install %s' % p)
+                to_install.append(p)
+        if to_install:
+            cmd1 = ['apt-get', 'update']
+            cmd2 = ['apt-get', '-y', 'install'] + packages
+
+    if to_install:
+        print_(c.GREEN + 'Installing ' + ", ".join(to_install)+c.RESET)
+
         try:
-            import simplejson as json
+            if subprocess.call(cmd1) > 0:
+                raise Exception("Failed update")
+            if subprocess.call(cmd2) > 0:
+                raise Exception("Failed install")
         except:
-            # download and install simplejson
-            url = 'http://pypi.python.org/packages/source/s/simplejson/simplejson-2.0.9.tar.gz#md5=af5e67a39ca3408563411d357e6d5e47'
-            subprocess.call(['curl','-s','-L','-o','simplejson.tar.gz',url], stdout=devnull)
-            tar = tarfile.open("simplejson.tar.gz"); tar.extractall(); tar.close()
-            os.remove('simplejson.tar.gz')
-            print_(c.GREEN + 'Installing simplejson python package' + c.RESET)
-            subprocess.call(['sudo','python','setup.py','install'], cwd="./simplejson-2.0.9")
-            shutil.rmtree("./simplejson-2.0.9", True)
-            print_(c.GREEN + 'All done. You just need to restart this script...' + c.RESET)
-            os._exit(1)
+            print_(c.RED + 'Error: Can\'t install dependencies.' + c.RESET)
+            print_(c.RED + 'Try restarting this script as root or installing packages manually:' + c.RESET)
+            print_('  ' + ' '.join(cmd1))
+            print_('  ' + ' '.join(cmd2))
+            sys.exit(1)
 
 
-
-    ################################################################################
-    print_(c.GREEN + 'Retrieving server location... ', end = c.RESET)
-    r = subprocess.Popen(['curl','-s','http://geoip.nekudo.com/api/'], stdout=subprocess.PIPE).communicate()[0]
+def get_geo_info():
+    """Return geo location information."""
+    print_(c.GREEN + 'Retrieving server location... ' + c.RESET)
     try:
-        geo = json.loads(r)
+        geo = subprocess.Popen(['curl','-s','http://geoip.nekudo.com/api/'], stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
     except ValueError:
         print_(c.RED + "geoip API error. Terminating..." + c.RESET)
-        os._exit(1)
+        sys.exit(1)
 
-    if ("type" in geo):
-        if (geo['type'] == 'error'):
-            print_(geo['msg'])
-    else:
-        print_("%s, %s" % (geo['city'], geo['country']['name']))
+    return geo
 
-    payload['geo'] = geo
 
-    print_(c.GREEN + 'Collecting server specs... ')
+def get_server_specs(devnull):
+    """Return server specs."""
+    print_(c.GREEN + 'Collecting server specs... ' + c.RESET)
     specs = {}
-    specs['cpuinfo'] = get_sys_info('cpuinfo')
-    specs['meminfo'] = get_sys_info('meminfo')
-    df = get_total_disk()
+    specs['cpuinfo'] = get_sys_info('cpuinfo', devnull)
+    specs['meminfo'] = get_sys_info('meminfo', devnull)
+    df = get_total_disk(devnull)
     specs['diskinfo'] = df['output']
     print_(df['output'])
     ram = get_total_ram(specs['meminfo'])
@@ -335,129 +316,262 @@ try:
     print_('%(count)s × %(name)s' % cpu, end="")
     print_('  |  %(ram)s%(units)s RAM' % ram, end="")
     print_('  |  %s disk' % df['total']);
-    payload['specs'] = specs
 
-    benchmarks = {}
-    print_("", end = c.RESET)
+    return specs
 
-    ################################################################################
-    ###                          Speedtest                                       ###
-    ################################################################################
-    if ('speedtest' in to_run):
+
+class Benchmark(object):
+    def __init__(self, specs, stdout):
+        self.specs = specs
+        self.stdout = stdout
+
+    def download(self):
+        """Abstract method, may be overridden in child class."""
+        pass
+
+    def run(self):
+        """Abstract method, must be overridden in child class."""
+        raise NotImplementedError
+
+
+class SpeedtestBenchmark(Benchmark):
+    code = 'speedtest'
+
+    def download(self):
         url = 'https://raw.githubusercontent.com/anton-ko/speedtest/master/speedtest.py'
         print_(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
-        subprocess.call(['curl','-s','-L','-o','speedtest.py',url], stdout=devnull)
+        subprocess.call(['curl','-s','-L','-o','speedtest.py',url], stdout=self.stdout)
 
-        print_(c.GREEN + "Running bandwidth test:" + c.RESET)
+    def run(self):
+        print_(c.GREEN + "Running speedtest benchmark:" + c.RESET)
+        return run_and_print(["python","speedtest.py", "--verbose"])
 
-        benchmarks['speedtest'] = run_and_print(["python","speedtest.py", "--verbose"])
+class DownloadBenchmark(Benchmark):
+    code = 'download'
 
-    ################################################################################
-    ###                              DD                                          ###
-    ################################################################################
-    if ('dd' in to_run):
-        dd_size = int(ram['ram_mb']/32)
-        dd_str = "dd if=/dev/zero of=benchmark bs=64k count=%sk conv=fdatasync" % dd_size
+    def run(self):
+        print_(c.GREEN + "Running download benchmark:" + c.RESET)
+        url = 'http://cachefly.cachefly.net/100mb.test'
+        count = 5
+
+        print_(c.GREEN + " Downloading %s x%d" % (url, count) + c.RESET)
+
+        curl = ["curl", "-o", "/dev/null", "--silent", "--progress-bar",
+                "--write-out", 'Downloaded %{size_download} bytes in %{time_total} sec\n',
+                url]
+        result = []
+        size = 0
+        time = 0
+        for i in xrange(count):
+            s = run_and_print(curl)
+            match = re.search(r"Downloaded\s+([0-9]+)\sbytes\sin\s([0-9.]+)\ssec", s)
+            if match:
+                size += round(int(match.group(1)) / 1024 / 1024, 2) #megabytes
+                time += float(match.group(2)) #sec
+            result.append(s)
+        v = round(size * 8 / time, 2)
+        r = "Finished! Average download speed is %.2f Mbit/s" % v
+        result.append(r)
+        print_(c.GREEN + r + c.RESET)
+        return "".join(result)
+
+
+class DDBenchmark(Benchmark):
+    code = 'dd'
+
+    def run(self):
+        result = {}
+
+        ram = get_total_ram(self.specs['meminfo'])
+        if ram['ram_mb'] <= 1024:
+            dd_size = 32
+        else:
+            dd_size = int(round(ram['ram_mb']/32))
+
+        cmd = ['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64K', 'count=%sK' % dd_size, 'conv=fdatasync']
+        dd_str = ' '.join(cmd)
         print_(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
-        benchmarks['dd'] = {}
-        benchmarks['dd'][0] = dd_str + "\n" + \
-            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64k', 'count=%sk' % dd_size, 'conv=fdatasync'])
+        result["base64k"] = dd_str + "\n" + run_and_print(cmd)
 
-        dd_size = int(ram['ram_mb']*2)
-        dd_str = "dd if=/dev/zero of=benchmark bs=1M count=%s conv=fdatasync" % dd_size
+        dd_size = dd_size * 64
+        cmd = ['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync']
+        dd_str = ' '.join(cmd)
         print_(c.GREEN + "  " + dd_str + c.RESET)
-        benchmarks['dd'][1] =  dd_str + "\n" + \
-            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync'])
+        result["base1m"] = dd_str + "\n" + run_and_print(cmd)
 
         os.remove('benchmark')
         print_("", end = c.RESET)
 
-    ################################################################################
-    ###                              FIO                                         ###
-    ################################################################################
-    if ('fio' in to_run):
+        return result
+
+
+class FioBenchmark(Benchmark):
+    code = 'fio'
+    _fio_dir = './fio-fio-2.8'
+
+    def download(self):
         fio_url = 'https://codeload.github.com/axboe/fio/tar.gz/fio-2.8'
         print_(c.GREEN + 'Downloading & building fio from %s ' % fio_url + c.RESET)
 
-        fio_dir = './fio-fio-2.8'
-        subprocess.call(['curl','-s','-L','-o','fio.tar.gz',fio_url], stdout=devnull)
+        subprocess.call(['curl','-s','-L','-o','fio.tar.gz',fio_url], stdout=self.stdout)
         tar = tarfile.open("fio.tar.gz"); tar.extractall(); tar.close()
         os.remove('fio.tar.gz')
-        subprocess.check_call(['make'], cwd = fio_dir,stdout=devnull)
+        if subprocess.call(['make'], cwd = self._fio_dir,stdout=self.stdout):
+            print_(c.RED + 'Couldn\'t build fio. Exiting.')
+            sys.exit(-1)
 
-        print_(c.GREEN + 'Running IO tests:' + c.RESET)
+    def run(self):
+        ram = get_total_ram(self.specs['meminfo'])
+        ram_mb = ram['ram_mb']
         jobs = 8
-        size = round(int(ram['ram_mb'])*2 / jobs)
-        benchmarks['fio'] = {}
+        print_(c.GREEN + 'Running IO tests:' + c.RESET)
+
+        if ram_mb <= 1024:
+            size = round(1024 / jobs)
+        else:
+            size = round(int(ram['ram_mb'])*2 / jobs)
+        result = {}
+
 
         cmd = [
                 './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
                 '--runtime=60', '--ioengine=libaio', '--randrepeat=1',
                 '--iodepth=32', '--invalidate=1', '--verify=0',
-                '--verify_fatal=0', '--numjobs=8', '--rw=randread', '--blocksize=4k',
+                '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
                 '--group_reporting'
                 ]
-        benchmarks['fio']['random-read'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = fio_dir)
+        result['random-read'] = " ".join(cmd) + "\n" + \
+            run_and_print(cmd, cwd = self._fio_dir)
 
         cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
              '--runtime=60', '--ioengine=libaio', '--randrepeat=1', '--iodepth=32',
              '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
-             '--numjobs=8', '--rw=randread', '--blocksize=4k',
+             '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
              '--group_reporting']
-        benchmarks['fio']['random-read-direct'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = fio_dir)
-
-        clean_up(fio_dir, name='benchmark');
+        result['random-read-direct'] = " ".join(cmd) + "\n" + \
+            run_and_print(cmd, cwd = self._fio_dir)
 
         cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
              '--runtime=60', '--filename=benchmark', '--ioengine=libaio',
              '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
-             '--verify=0', '--verify_fatal=0', '--numjobs=8', '--rw=randwrite',
+             '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
              '--blocksize=4k', '--group_reporting']
-        benchmarks['fio']['random-write-direct'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = fio_dir)
+        result['random-write-direct'] = " ".join(cmd) + "\n" + \
+            run_and_print(cmd, cwd = self._fio_dir)
 
         cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
              '--filename=benchmark', '--ioengine=libaio', '--randrepeat=1',
              '--iodepth=32',  '--invalidate=1', '--verify=0',
-             '--verify_fatal=0', '--numjobs=8', '--rw=randwrite', '--blocksize=4k',
+             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
              '--group_reporting']
-        benchmarks['fio']['random-write'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = fio_dir)
+        result['random-write'] = " ".join(cmd) + "\n" + \
+            run_and_print(cmd, cwd = self._fio_dir)
 
-        clean_up(fio_dir, name='benchmark');
+        return result
 
-        shutil.rmtree(fio_dir, True)
 
-    ################################################################################
-    ###                           UNIX BENCH                                     ###
-    ################################################################################
-    if ('unixbench' in to_run):
+class UnixbenchBenchmark(Benchmark):
+    code = 'unixbench'
+    _unixbench_dir = './byte-unixbench'
+
+    def download(self):
         unixbench_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/master/benchmarks/unixbench-5.1.3-patched.tar.gz'
-        unixbench_dir = './byte-unixbench'
 
         print_(c.GREEN + 'Downloading & running UnixBench from %s' % unixbench_url + c.RESET)
 
-        subprocess.call(['curl','-s','-L','-o','unixbench.tar.gz',unixbench_url], stdout=devnull)
+        subprocess.call(['curl','-s','-L','-o','unixbench.tar.gz',unixbench_url], stdout=self.stdout)
         tar = tarfile.open("unixbench.tar.gz"); tar.extractall(); tar.close()
-        os.remove('unixbench.tar.gz')
 
-        benchmarks['unixbench'] =  run_and_print(['./Run'], cwd='%s/UnixBench' % unixbench_dir)
-        shutil.rmtree(unixbench_dir, True)
+    def run(self):
+        return run_and_print(['./Run'], cwd='%s/UnixBench' % self._unixbench_dir)
 
-    payload['benchmarks'] = benchmarks
+class DummyBenchmark(Benchmark):
+    code = 'dummy'
 
-    print_(c.GREEN + c.BOLD)
-    print_("All done! Submitting the results..." + c.RESET)
+    def download(self):
+        pass
 
-    subprocess.call(['curl',
-         '-X', 'POST',
-         '-H','Content-Type: application/json',
-         '-H','Accept: application/json',
-         '-d', json.dumps(payload),
-         'https://serverscope.io/api/trials'])
-finally:
-    devnull.close()
-    os.chdir(current_path)
-    shutil.rmtree('./serverscope')
+    def run(self):
+        return "dummy"
+
+
+ALL_BENCHMARKS = [SpeedtestBenchmark, DDBenchmark, FioBenchmark,
+                  UnixbenchBenchmark, DownloadBenchmark, DummyBenchmark]
+
+
+def get_benchmark_class(code):
+    """Return benchmark class with given code or None."""
+    search = [x for x in ALL_BENCHMARKS if x.code == code]
+    if search:
+        return search[0]
+
+
+def get_selected_benchmark_classes(include):
+    """Return a list of benchmark classes specified with include argument.
+
+    Eg, if include equals 'speedtest,dd' the function returns
+    [SpeedtestBenchmark, DDBenchmark]
+    """
+    if include:
+        result = []
+        for i in include.split(','):
+            cls = get_benchmark_class(i)
+            if cls:
+                result.append(cls)
+            else:
+                print_("%s benchmark hasn't been recognised. Use these: " % i, end ="")
+                print_(', '.join([bb.code for bb in ALL_BENCHMARKS]))
+        return result
+    else:
+        print_("No benchmarks selected. Running all...")
+        return ALL_BENCHMARKS
+
+
+def post_results(data, devnull):
+    encoded = urlencode_(data)
+
+    curl = ['curl','-k','-X','POST',
+        '-H', 'Content-Type: application/x-www-form-urlencoded',
+        '-H', 'Accept: text/plain',
+        '-H', 'User-Agent: serverscope.io benchmark tool',
+        '--data', encoded,
+        'https://serverscope.io/api/trials.txt'
+    ]
+    subprocess.call(curl)
+
+
+if __name__ == '__main__':
+    devnull = open(os.devnull, 'w')
+    ensure_dependencies(devnull)
+
+    args = get_parser()
+
+    payload = {"email": args["email"], "plan": args["plan"], "locale": args["locale"]}
+    payload["os"] = platform.dist()
+
+    try:
+        tmp_dir = tempfile.mkdtemp(prefix='serverscope-')
+        os.chdir(tmp_dir)
+
+        payload['geo'] = get_geo_info()
+        payload['specs'] = get_server_specs(devnull)
+
+        benchmarks = {}
+        print_("", end = c.RESET)
+
+        for BenchmarkClass in get_selected_benchmark_classes(args.get('include', None)):
+            benchmark = BenchmarkClass(specs=payload['specs'], stdout=devnull)
+            benchmark.download()
+            result = benchmark.run()
+            if result:
+                benchmarks[benchmark.code] = result
+
+        payload['benchmarks'] = benchmarks
+
+        if payload.get('benchmarks', None):
+            print_(c.GREEN + c.BOLD)
+            print_("All done! Submitting the results..." + c.RESET)
+            post_results(payload, devnull)
+    finally:
+        devnull.close()
+        shutil.rmtree(tmp_dir)
