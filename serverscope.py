@@ -380,23 +380,24 @@ class DDBenchmark(Benchmark):
     code = 'dd'
 
     def run(self):
+        result = {}
+
         ram = get_total_ram(self.specs['meminfo'])
         if ram['ram_mb'] <= 1024:
             dd_size = 32
         else:
-            dd_size = round(ram['ram_mb']/32)
+            dd_size = int(round(ram['ram_mb']/32))
 
-        dd_str = "dd if=/dev/zero of=benchmark bs=64k count=%sk conv=fdatasync" % dd_size
+        cmd = ['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64K', 'count=%sK' % dd_size, 'conv=fdatasync']
+        dd_str = ' '.join(cmd)
         print_(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
-        result = {}
-        result["base64k"] = dd_str + "\n" + \
-            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64k', 'count=%sk' % dd_size, 'conv=fdatasync'])
+        result["base64k"] = dd_str + "\n" + run_and_print(cmd)
 
-        dd_size = dd_size*64
-        dd_str = "dd if=/dev/zero of=benchmark bs=1M count=%s conv=fdatasync" % dd_size
+        dd_size = dd_size * 64
+        cmd = ['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync']
+        dd_str = ' '.join(cmd)
         print_(c.GREEN + "  " + dd_str + c.RESET)
-        result["base1m"] = dd_str + "\n" + \
-            run_and_print(['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync'])
+        result["base1m"] = dd_str + "\n" + run_and_print(cmd)
 
         os.remove('benchmark')
         print_("", end = c.RESET)
