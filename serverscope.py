@@ -15,7 +15,6 @@ import tarfile
 import shutil
 import signal
 import tempfile
-import urllib2
 import urllib
 
 try:
@@ -92,6 +91,14 @@ else:
     del builtins
 
 
+def urlencode_(data):
+    try:
+        from urllib import urlencode
+    except ImportError:
+        from urllib.parse import urlencode
+    return urlencode(data)
+
+
 def restore_signals(): # from http://hg.python.org/cpython/rev/768722b2ae0a/
     signals = ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ')
     for sig in signals:
@@ -101,23 +108,27 @@ def restore_signals(): # from http://hg.python.org/cpython/rev/768722b2ae0a/
 
 def run_and_print(command, cwd=None):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1, cwd=cwd,
-              preexec_fn=restore_signals)
+              preexec_fn=restore_signals, universal_newlines=True)
     chunks = []
     try:
-        for chunk in iter(lambda: os.read(p.stdout.fileno(), 1 << 13), ''):
-           getattr(sys.stdout, 'buffer', sys.stdout).write(chunk)
-           sys.stdout.flush()
-           chunks.append(chunk)
+        while True:
+            chunk = p.stdout.readline()
+            if chunk != '':
+                getattr(sys.stdout, 'buffer', sys.stdout).write(chunk.encode('utf-8'))
+                sys.stdout.flush()
+                chunks.append(chunk)
+            else:
+                break
     finally:
         p.stdout.close()
     p.wait()
     return ''.join(chunks)
 
 
-def get_sys_info(obj):
+def get_sys_info(obj, devnull):
     r = 'N/A'
     try:
-        r = subprocess.Popen(['cat','/proc/%s' % (obj)], stdout=subprocess.PIPE, stderr=devnull).communicate()[0]
+        r = subprocess.Popen(['cat','/proc/%s' % (obj)], stdout=subprocess.PIPE, stderr=devnull, universal_newlines=True).communicate()[0]
     except subprocess.CalledProcessError:
         print_('Warning: /proc/%s does not exist' % (obj))
     return r
@@ -174,13 +185,13 @@ def get_nodev_filesystems():
     return r
 
 
-def get_total_disk():
+def get_total_disk(devnull):
     nodevs = get_nodev_filesystems()
     command = ['df']
     for fs in nodevs:
         command.append('-x')
         command.append(fs)
-    df = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=devnull).communicate()[0]
+    df = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=devnull, universal_newlines=True).communicate()[0]
 
     lines = df.split('\n')[1:]
     total = 0
@@ -243,7 +254,7 @@ def ensure_dependencies(devnull):
 
     if (subprocess.call(['which','yum'], stdout=devnull, stderr=devnull) == 0):
         packages = ['make', 'automake', 'gcc', 'gcc-c++', 'kernel-devel', 'libaio-devel','perl-Time-HiRes']
-        installed = subprocess.Popen(['rpm', '-qa'], stdout=subprocess.PIPE).communicate()[0]
+        installed = subprocess.Popen(['rpm', '-qa'], stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
         for p in packages:
             if p not in installed:
                 print_('Need to install %s' % p)
@@ -283,7 +294,7 @@ def get_geo_info():
     """Return geo location information."""
     print_(c.GREEN + 'Retrieving server location... ' + c.RESET)
     try:
-        geo = subprocess.Popen(['curl','-s','http://geoip.nekudo.com/api/'], stdout=subprocess.PIPE).communicate()[0]
+        geo = subprocess.Popen(['curl','-s','http://geoip.nekudo.com/api/'], stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
     except ValueError:
         print_(c.RED + "geoip API error. Terminating..." + c.RESET)
         sys.exit(1)
@@ -291,13 +302,13 @@ def get_geo_info():
     return geo
 
 
-def get_server_specs():
+def get_server_specs(devnull):
     """Return server specs."""
-    print_(c.GREEN + 'Collecting server specs... ')
+    print_(c.GREEN + 'Collecting server specs... ' + c.RESET)
     specs = {}
-    specs['cpuinfo'] = get_sys_info('cpuinfo')
-    specs['meminfo'] = get_sys_info('meminfo')
-    df = get_total_disk()
+    specs['cpuinfo'] = get_sys_info('cpuinfo', devnull)
+    specs['meminfo'] = get_sys_info('meminfo', devnull)
+    df = get_total_disk(devnull)
     specs['diskinfo'] = df['output']
     print_(df['output'])
     ram = get_total_ram(specs['meminfo'])
@@ -484,7 +495,7 @@ class DummyBenchmark(Benchmark):
 
 
 ALL_BENCHMARKS = [SpeedtestBenchmark, DDBenchmark, FioBenchmark,
-                  UnixbenchBenchmark, DownloadBenchmark]
+                  UnixbenchBenchmark, DownloadBenchmark, DummyBenchmark]
 
 
 def get_benchmark_class(code):
@@ -515,8 +526,9 @@ def get_selected_benchmark_classes(include):
         return ALL_BENCHMARKS
 
 
-def post_results(data):
-    encoded = urllib.urlencode(data)
+def post_results(data, devnull):
+    encoded = urlencode_(data)
+
     curl = ['curl','-k','-X','POST',
         '-H', 'Content-Type: application/x-www-form-urlencoded',
         '-H', 'Accept: text/plain',
@@ -541,7 +553,7 @@ if __name__ == '__main__':
         os.chdir(tmp_dir)
 
         payload['geo'] = get_geo_info()
-        payload['specs'] = get_server_specs()
+        payload['specs'] = get_server_specs(devnull)
 
         benchmarks = {}
         print_("", end = c.RESET)
@@ -558,7 +570,7 @@ if __name__ == '__main__':
         if payload.get('benchmarks', None):
             print_(c.GREEN + c.BOLD)
             print_("All done! Submitting the results..." + c.RESET)
-            post_results(payload)
+            post_results(payload, devnull)
     finally:
         devnull.close()
         shutil.rmtree(tmp_dir)
