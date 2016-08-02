@@ -496,7 +496,7 @@ class DummyBenchmark(Benchmark):
 
 
 ALL_BENCHMARKS = [SpeedtestBenchmark, DDBenchmark, FioBenchmark,
-                  UnixbenchBenchmark, DownloadBenchmark, DummyBenchmark]
+                  UnixbenchBenchmark, DownloadBenchmark]
 
 
 def get_benchmark_class(code):
