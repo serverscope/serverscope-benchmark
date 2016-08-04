@@ -362,7 +362,7 @@ class DownloadBenchmark(Benchmark):
         result = []
         size = 0
         time = 0
-        for i in xrange(count):
+        for _ in range(count):
             s = run_and_print(curl)
             match = re.search(r"Downloaded\s+([0-9]+)\sbytes\sin\s([0-9.]+)\ssec", s)
             if match:
