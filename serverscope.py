@@ -16,6 +16,8 @@ import shutil
 import signal
 import tempfile
 import urllib
+import locale
+
 
 try:
     from argparse import ArgumentParser as ArgParser
@@ -110,11 +112,13 @@ def run_and_print(command, cwd=None):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1, cwd=cwd,
               preexec_fn=restore_signals, universal_newlines=True)
     chunks = []
+    encoding = locale.getdefaultlocale()[1] or 'ascii'
+
     try:
         while True:
             chunk = p.stdout.readline()
             if chunk != '':
-                getattr(sys.stdout, 'buffer', sys.stdout).write(chunk.encode('utf-8'))
+                getattr(sys.stdout, 'buffer', sys.stdout).write(chunk.encode(encoding))
                 sys.stdout.flush()
                 chunks.append(chunk)
             else:
