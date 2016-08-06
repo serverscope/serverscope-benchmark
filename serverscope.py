@@ -118,8 +118,11 @@ def run_and_print(command, cwd=None):
         while True:
             chunk = p.stdout.readline()
             if chunk != '':
-                getattr(sys.stdout, 'buffer', sys.stdout).write(chunk.encode(encoding))
-                sys.stdout.flush()
+                try:
+                    getattr(sys.stdout, 'buffer', sys.stdout).write(chunk.encode(encoding))
+                    sys.stdout.flush()
+                except UnicodeDecodeError:
+                    pass
                 chunks.append(chunk)
             else:
                 break
