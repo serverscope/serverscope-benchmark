@@ -22,7 +22,8 @@ if __name__ == '__main__':
 
     args = get_parser()
 
-    payload = {"email": args["email"], "plan": args["plan"], "locale": args["locale"]}
+    payload = {
+        "email": args["email"], "plan": args["plan"], "locale": args["locale"]}
     payload["os"] = platform.dist()
 
     try:
@@ -33,7 +34,7 @@ if __name__ == '__main__':
         payload['specs'] = get_server_specs(devnull)
 
         benchmarks = {}
-        print_("", end = c.RESET)
+        print_("", end=c.RESET)
 
         for BenchmarkClass in get_selected_benchmark_classes(args.get('include', None)):
             benchmark = BenchmarkClass(specs=payload['specs'], stdout=devnull)

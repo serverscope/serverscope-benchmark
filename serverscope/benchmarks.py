@@ -30,11 +30,11 @@ class SpeedtestBenchmark(Benchmark):
     def download(self):
         url = 'https://raw.githubusercontent.com/anton-ko/speedtest/master/speedtest.py'
         print_(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
-        subprocess.call(['curl','-s','-L','-o','speedtest.py',url], stdout=self.stdout)
+        subprocess.call(['curl', '-s', '-L', '-o', 'speedtest.py', url], stdout=self.stdout)
 
     def run(self):
         print_(c.GREEN + "Running speedtest benchmark:" + c.RESET)
-        return run_and_print(["python","speedtest.py", "--verbose"])
+        return run_and_print(["python", "speedtest.py", "--verbose"])
 
 
 class DownloadBenchmark(Benchmark):
@@ -57,8 +57,8 @@ class DownloadBenchmark(Benchmark):
             s = run_and_print(curl)
             match = re.search(r"Downloaded\s+([0-9]+)\sbytes\sin\s([0-9.]+)\ssec", s)
             if match:
-                size += round(int(match.group(1)) / 1024 / 1024, 2) #megabytes
-                time += float(match.group(2)) #sec
+                size += round(int(match.group(1)) / 1024 / 1024, 2)  # megabytes
+                time += float(match.group(2))  # sec
             result.append(s)
         v = round(size * 8 / time, 2)
         r = "Finished! Average download speed is %.2f Mbit/s" % v
@@ -79,19 +79,23 @@ class DDBenchmark(Benchmark):
         else:
             dd_size = int(round(ram['ram_mb']/32))
 
-        cmd = ['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64K', 'count=%sK' % dd_size, 'conv=fdatasync']
+        cmd = [
+            'dd', 'if=/dev/zero', 'of=benchmark',
+            'bs=64K', 'count=%sK' % dd_size, 'conv=fdatasync']
         dd_str = ' '.join(cmd)
         print_(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
         result["base64k"] = dd_str + "\n" + run_and_print(cmd)
 
         dd_size = dd_size * 64
-        cmd = ['dd', 'if=/dev/zero', 'of=benchmark', 'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync']
+        cmd = [
+            'dd', 'if=/dev/zero', 'of=benchmark',
+            'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync']
         dd_str = ' '.join(cmd)
         print_(c.GREEN + "  " + dd_str + c.RESET)
         result["base1m"] = dd_str + "\n" + run_and_print(cmd)
 
         os.remove('benchmark')
-        print_("", end = c.RESET)
+        print_("", end=c.RESET)
 
         return result
 
@@ -104,10 +108,12 @@ class FioBenchmark(Benchmark):
         fio_url = 'https://codeload.github.com/axboe/fio/tar.gz/fio-2.8'
         print_(c.GREEN + 'Downloading & building fio from %s ' % fio_url + c.RESET)
 
-        subprocess.call(['curl','-s','-L','-o','fio.tar.gz',fio_url], stdout=self.stdout)
-        tar = tarfile.open("fio.tar.gz"); tar.extractall(); tar.close()
+        subprocess.call(['curl', '-s', '-L', '-o', 'fio.tar.gz', fio_url], stdout=self.stdout)
+        tar = tarfile.open("fio.tar.gz")
+        tar.extractall()
+        tar.close()
         os.remove('fio.tar.gz')
-        if subprocess.call(['make'], cwd = self._fio_dir,stdout=self.stdout):
+        if subprocess.call(['make'], cwd=self._fio_dir, stdout=self.stdout):
             print_(c.RED + 'Couldn\'t build fio. Exiting.')
             sys.exit(-1)
 
@@ -123,40 +129,45 @@ class FioBenchmark(Benchmark):
             size = round(int(ram['ram_mb'])*2 / jobs)
         result = {}
 
+        cmd = [
+            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '--runtime=60', '--ioengine=libaio', '--randrepeat=1',
+            '--iodepth=32', '--invalidate=1', '--verify=0',
+            '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
+            '--group_reporting'
+        ]
+        result['random-read'] = " ".join(cmd) + "\n" + \
+            run_and_print(cmd, cwd=self._fio_dir)
 
         cmd = [
-                './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-                '--runtime=60', '--ioengine=libaio', '--randrepeat=1',
-                '--iodepth=32', '--invalidate=1', '--verify=0',
-                '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
-                '--group_reporting'
-                ]
-        result['random-read'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = self._fio_dir)
-
-        cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-             '--runtime=60', '--ioengine=libaio', '--randrepeat=1', '--iodepth=32',
-             '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
-             '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
-             '--group_reporting']
+            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '--runtime=60', '--ioengine=libaio', '--randrepeat=1', '--iodepth=32',
+            '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
+            '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
+            '--group_reporting'
+        ]
         result['random-read-direct'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = self._fio_dir)
+            run_and_print(cmd, cwd=self._fio_dir)
 
-        cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-             '--runtime=60', '--filename=benchmark', '--ioengine=libaio',
-             '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
-             '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
-             '--blocksize=4k', '--group_reporting']
+        cmd = [
+            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '--runtime=60', '--filename=benchmark', '--ioengine=libaio',
+            '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
+            '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
+            '--blocksize=4k', '--group_reporting'
+        ]
         result['random-write-direct'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = self._fio_dir)
+            run_and_print(cmd, cwd=self._fio_dir)
 
-        cmd = ['./fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
-             '--filename=benchmark', '--ioengine=libaio', '--randrepeat=1',
-             '--iodepth=32',  '--invalidate=1', '--verify=0',
-             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
-             '--group_reporting']
+        cmd = [
+            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
+            '--filename=benchmark', '--ioengine=libaio', '--randrepeat=1',
+            '--iodepth=32',  '--invalidate=1', '--verify=0',
+            '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
+            '--group_reporting'
+        ]
         result['random-write'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd = self._fio_dir)
+            run_and_print(cmd, cwd=self._fio_dir)
 
         return result
 
@@ -166,12 +177,15 @@ class UnixbenchBenchmark(Benchmark):
     _unixbench_dir = './byte-unixbench'
 
     def download(self):
-        unixbench_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/master/benchmarks/unixbench-5.1.3-patched.tar.gz'
+        unixbench_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/master/benchmarks/unixbench-5.1.3-patched.tar.gz'  # noqa
 
         print_(c.GREEN + 'Downloading & running UnixBench from %s' % unixbench_url + c.RESET)
 
-        subprocess.call(['curl','-s','-L','-o','unixbench.tar.gz',unixbench_url], stdout=self.stdout)
-        tar = tarfile.open("unixbench.tar.gz"); tar.extractall(); tar.close()
+        subprocess.call(['curl', '-s', '-L', '-o', 'unixbench.tar.gz', unixbench_url],
+                        stdout=self.stdout)
+        tar = tarfile.open("unixbench.tar.gz")
+        tar.extractall()
+        tar.close()
 
     def run(self):
         return run_and_print(['./Run'], cwd='%s/UnixBench' % self._unixbench_dir)
@@ -211,7 +225,7 @@ def get_selected_benchmark_classes(include):
             if cls:
                 result.append(cls)
             else:
-                print_("%s benchmark hasn't been recognised. Use these: " % i, end ="")
+                print_("%s benchmark hasn't been recognised. Use these: " % i, end="")
                 print_(', '.join([bb.code for bb in ALL_BENCHMARKS]))
         return result
     else:

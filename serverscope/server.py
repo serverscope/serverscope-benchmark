@@ -10,7 +10,10 @@ from .utils import Color as c
 def get_sys_info(obj, devnull):
     r = 'N/A'
     try:
-        r = subprocess.Popen(['cat','/proc/%s' % (obj)], stdout=subprocess.PIPE, stderr=devnull, universal_newlines=True).communicate()[0]
+        r = subprocess.Popen(['cat', '/proc/%s' % (obj)],
+                             stdout=subprocess.PIPE,
+                             stderr=devnull,
+                             universal_newlines=True).communicate()[0]
     except subprocess.CalledProcessError:
         print_('Warning: /proc/%s does not exist' % (obj))
     return r
@@ -23,16 +26,16 @@ def get_total_ram(meminfo):
         ram = sum(map(int, match))
     else:
         match = re.search(r"MemTotal:\s+([0-9]+)\s", meminfo)
-        ram = int(match.group(1)) #kB
+        ram = int(match.group(1))  # kB
 
-    ram = round(ram/1024) #MB
+    ram = round(ram/1024)  # MB
     ram_mb = ram
     if (ram > 1024):
         ram_units = 'G'
         ram = round(ram/1024)
     else:
         ram_units = 'M'
-    return {'ram':ram, 'units':ram_units, 'ram_mb':ram_mb}
+    return {'ram': ram, 'units': ram_units, 'ram_mb': ram_mb}
 
     return 'N/A'
 
@@ -47,7 +50,7 @@ def get_cpu_info_val(property, cpuinfo):
 
 def get_cpu_info(cpuinfo):
     r = {}
-    r['name'] = get_cpu_info_val('model name', cpuinfo);
+    r['name'] = get_cpu_info_val('model name', cpuinfo)
     r['count'] = len(re.findall(r"processor\s+:\s", cpuinfo))
     r['cores'] = get_cpu_info_val('cpu cores', cpuinfo)
 
@@ -55,8 +58,8 @@ def get_cpu_info(cpuinfo):
 
 
 def get_nodev_filesystems():
-    r = [];
-    f = open('/proc/filesystems','r')
+    r = []
+    f = open('/proc/filesystems', 'r')
     try:
         for line in f:
             match = re.search(r'^nodev\s+(\S+)', line)
@@ -73,7 +76,10 @@ def get_total_disk(devnull):
     for fs in nodevs:
         command.append('-x')
         command.append(fs)
-    df = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=devnull, universal_newlines=True).communicate()[0]
+    df = subprocess.Popen(command,
+                          stdout=subprocess.PIPE,
+                          stderr=devnull,
+                          universal_newlines=True).communicate()[0]
 
     lines = df.split('\n')[1:]
     total = 0
@@ -98,6 +104,6 @@ def get_server_specs(devnull):
     cpu = get_cpu_info(specs['cpuinfo'])
     print_('%(count)s × %(name)s' % cpu, end="")
     print_('  |  %(ram)s%(units)s RAM' % ram, end="")
-    print_('  |  %s disk' % df['total']);
+    print_('  |  %s disk' % df['total'])
 
     return specs

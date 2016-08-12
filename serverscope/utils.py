@@ -19,7 +19,9 @@ class Color:
 
 c = Color
 
-def restore_signals(): # from http://hg.python.org/cpython/rev/768722b2ae0a/
+
+# from http://hg.python.org/cpython/rev/768722b2ae0a/
+def restore_signals():
     signals = ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ')
     for sig in signals:
         if hasattr(signal, sig):
@@ -27,8 +29,13 @@ def restore_signals(): # from http://hg.python.org/cpython/rev/768722b2ae0a/
 
 
 def run_and_print(command, cwd=None):
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1, cwd=cwd,
-              preexec_fn=restore_signals, universal_newlines=True)
+    p = subprocess.Popen(command,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
+                         bufsize=-1,
+                         cwd=cwd,
+                         preexec_fn=restore_signals,
+                         universal_newlines=True)
     chunks = []
     encoding = locale.getdefaultlocale()[1] or 'ascii'
 
@@ -53,7 +60,8 @@ def run_and_print(command, cwd=None):
 def post_results(data, devnull):
     encoded = urlencode(data)
 
-    curl = ['curl','-k','-X','POST',
+    curl = [
+        'curl', '-k', '-X', 'POST',
         '-H', 'Content-Type: application/x-www-form-urlencoded',
         '-H', 'Accept: text/plain',
         '-H', 'User-Agent: serverscope.io benchmark tool',
@@ -67,8 +75,10 @@ def get_geo_info():
     """Return geo location information."""
     print_(c.GREEN + 'Retrieving server location... ' + c.RESET)
     try:
-        cmd = ['curl','-s','http://geoip.nekudo.com/api/']
-        geo = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
+        cmd = ['curl', '-s', 'http://geoip.nekudo.com/api/']
+        geo = subprocess.Popen(cmd,
+                               stdout=subprocess.PIPE,
+                               universal_newlines=True).communicate()[0]
     except ValueError:
         print_(c.RED + "geoip API error. Terminating..." + c.RESET)
         sys.exit(1)
