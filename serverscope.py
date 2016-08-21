@@ -14,7 +14,6 @@ import subprocess
 import tarfile
 import shutil
 import signal
-import tempfile
 import urllib
 import locale
 
@@ -393,7 +392,7 @@ class DDBenchmark(Benchmark):
         if ram['ram_mb'] <= 1024:
             dd_size = 32
         else:
-            dd_size = int(round(ram['ram_mb']/32))
+            dd_size = 64
 
         cmd = ['dd', 'if=/dev/zero', 'of=benchmark', 'bs=64K', 'count=%sK' % dd_size, 'conv=fdatasync']
         dd_str = ' '.join(cmd)
@@ -556,9 +555,13 @@ if __name__ == '__main__':
     payload = {"email": args["email"], "plan": args["plan"], "locale": args["locale"]}
     payload["os"] = platform.dist()
 
-    try:
-        tmp_dir = tempfile.mkdtemp(prefix='serverscope-')
-        os.chdir(tmp_dir)
+    current_path = os.getcwd()		
+    try:		
+        tmp_dir = './serverscope'
+        if (os.path.isdir(tmp_dir)):		
+            shutil.rmtree(tmp_dir)		
+        os.mkdir(tmp_dir)		
+        os.chdir(tmp_dir)		
 
         payload['geo'] = get_geo_info()
         payload['specs'] = get_server_specs(devnull)
@@ -581,4 +584,5 @@ if __name__ == '__main__':
             post_results(payload, devnull)
     finally:
         devnull.close()
+        os.chdir(current_path)
         shutil.rmtree(tmp_dir)
