@@ -219,7 +219,14 @@ def get_selected_benchmark_classes(include):
 
     Eg, if include equals 'speedtest,dd' the function returns
     [SpeedtestBenchmark, DDBenchmark]
+
+    To include all benchmarks, pass in any falsy value or `all`.
     """
+
+    if not include or ('all' in include.split(',')):
+        print_("All benchmarks selected.")
+        return ALL_BENCHMARKS
+
     if include:
         result = []
         for i in include.split(','):
@@ -230,6 +237,3 @@ def get_selected_benchmark_classes(include):
                 print_("%s benchmark hasn't been recognised. Use these: " % i, end="")
                 print_(', '.join([bb.code for bb in ALL_BENCHMARKS]))
         return result
-    else:
-        print_("No benchmarks selected. Running all...")
-        return ALL_BENCHMARKS

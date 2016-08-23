@@ -7,7 +7,7 @@ _update=no
 _virtualenv=no
 _email=
 _plan=
-_included_benchmarks=
+_included_benchmarks=all
 
 while getopts "uve:p:i:" opt; do
     case $opt in
@@ -76,11 +76,10 @@ if [ $_virtualenv == "yes" ]; then
 fi
 
 echo pip install serverscope
-[ -n "$_included_benchmarks" ] && included_benchmarks="-i $_included_benchmarks"
 if [ -z "$_plan" ] || [ -z "$_email" ]; then
     echo Run serverscope manually: python -m serverscope -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\"
 else
-    echo serverscope.py -e "$_email" -p "$_plan" "$included_benchmarks"
+    python -m serverscope -e "$_email" -p "$_plan" -i "$_included_benchmarks"
 fi
 
 if [ $_virtualenv == "yes" ]; then
