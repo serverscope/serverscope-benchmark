@@ -20,13 +20,6 @@ while getopts "uve:p:i:" opt; do
 done
 shift $((OPTIND - 1))
 
-if [ -z "$_plan" ]; then
-    echo "Plan must be set. Aborting."; exit 1
-fi
-if [ -z "$_email" ]; then
-    echo "Email must be set. Aborting."; exit 1
-fi
-
 install () {
     installer="$1"
     program="$2"
@@ -84,7 +77,11 @@ fi
 
 echo pip install serverscope
 [ -n "$_included_benchmarks" ] && included_benchmarks="-i $_included_benchmarks"
-echo serverscope.py -e "$_email" -p "$_plan" "$included_benchmarks"
+if [ -z "$_plan" ] || [ -z "$_email" ]; then
+    echo Run serverscope manually: python -m serverscope -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\"
+else
+    echo serverscope.py -e "$_email" -p "$_plan" "$included_benchmarks"
+fi
 
 if [ $_virtualenv == "yes" ]; then
     # cleanup virtual environment
