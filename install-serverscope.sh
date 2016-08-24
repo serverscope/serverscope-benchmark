@@ -75,11 +75,11 @@ if [ $_virtualenv == "yes" ]; then
     source "$serverscope_venv/bin/activate"
 fi
 
-echo pip install serverscope
+echo pip install serverscope_benchmark
 if [ -z "$_plan" ] || [ -z "$_email" ]; then
-    echo Run serverscope manually: python -m serverscope -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\"
+    echo Run serverscope manually: python -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\"
 else
-    python -m serverscope -e "$_email" -p "$_plan" -i "$_included_benchmarks"
+    python -m serverscope_benchmark -e "$_email" -p "$_plan" -i "$_included_benchmarks"
 fi
 
 if [ $_virtualenv == "yes" ]; then

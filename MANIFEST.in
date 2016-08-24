@@ -1,4 +1,4 @@
 include README.md
 include LICENSE
-recursive-include serverscope *.py
+recursive-include serverscope_benchmark *.py
 recursive-exclude * *.pyc

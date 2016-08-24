@@ -1,18 +1,18 @@
 import os
 from setuptools import setup, find_packages
-import serverscope
+import serverscope_benchmark
 
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='serverscope',
-    version=serverscope.__version__,
+    name='serverscope_benchmark',
+    version=serverscope_benchmark.__version__,
     author='ServerScope',
     author_email='contact@serverscope.io',
     packages=find_packages(),
-    url='https://github.com/serverscope/serverscope',
+    url='https://github.com/serverscope/serverscope-benchmark',
     license='MIT',
     description='serverscope.io benchmark tool',
     long_description=open('README.md').read(),
