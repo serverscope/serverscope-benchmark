@@ -9,8 +9,8 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 setup(
     name='serverscope',
     version=serverscope.__version__,
-    author='Sasha Matijasic',
-    author_email='sasha@selectnull.com',
+    author='ServerScope',
+    author_email='contact@serverscope.io',
     packages=find_packages(),
     url='https://github.com/serverscope/serverscope',
     license='MIT',
@@ -19,12 +19,11 @@ setup(
     include_package_data=True,
     install_requires=[
         'six',
-        # 'requests'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
-        'Framework :: Django',
+        'Intended Audience :: System Administrators',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX :: Other',
