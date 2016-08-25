@@ -30,7 +30,7 @@ class SpeedtestBenchmark(Benchmark):
     code = 'speedtest'
 
     def download(self):
-        url = 'https://raw.githubusercontent.com/anton-ko/speedtest/master/speedtest.py'
+        url = 'https://raw.githubusercontent.com/serverscope/serverscope-tools/master/speedtest.py'
         print_(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
         subprocess.call(['curl', '-s', '-L', '-o', 'speedtest.py', url], stdout=self.stdout)
 
@@ -107,10 +107,10 @@ class FioBenchmark(Benchmark):
     _fio_dir = './fio-fio-2.8'
 
     def download(self):
-        fio_url = 'https://codeload.github.com/axboe/fio/tar.gz/fio-2.8'
-        print_(c.GREEN + 'Downloading & building fio from %s ' % fio_url + c.RESET)
+        url = 'https://github.com/serverscope/serverscope-tools/raw/master/fio-2.8.tar.gz'
+        print_(c.GREEN + 'Downloading & building fio from %s ' % url + c.RESET)
 
-        subprocess.call(['curl', '-s', '-L', '-o', 'fio.tar.gz', fio_url], stdout=self.stdout)
+        subprocess.call(['curl', '-s', '-L', '-o', 'fio.tar.gz', url], stdout=self.stdout)
         tar = tarfile.open("fio.tar.gz")
         tar.extractall()
         tar.close()
@@ -179,11 +179,10 @@ class UnixbenchBenchmark(Benchmark):
     _unixbench_dir = './byte-unixbench'
 
     def download(self):
-        unixbench_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/master/benchmarks/unixbench-5.1.3-patched.tar.gz'  # noqa
+        url = 'https://github.com/serverscope/serverscope-tools/raw/master/unixbench-5.1.3-patched.tar.gz'
+        print_(c.GREEN + 'Downloading & running UnixBench from %s' % url + c.RESET)
 
-        print_(c.GREEN + 'Downloading & running UnixBench from %s' % unixbench_url + c.RESET)
-
-        subprocess.call(['curl', '-s', '-L', '-o', 'unixbench.tar.gz', unixbench_url],
+        subprocess.call(['curl', '-s', '-L', '-o', 'unixbench.tar.gz', url],
                         stdout=self.stdout)
         tar = tarfile.open("unixbench.tar.gz")
         tar.extractall()
