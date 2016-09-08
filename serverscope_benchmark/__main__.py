@@ -27,7 +27,7 @@ if __name__ == '__main__':
     payload["os"] = platform.dist()
 
     try:
-        tmp_dir = tempfile.mkdtemp(prefix='serverscope-')
+        tmp_dir = tempfile.mkdtemp(prefix='serverscope-', dir='.')
         os.chdir(tmp_dir)
 
         payload['geo'] = get_geo_info()
