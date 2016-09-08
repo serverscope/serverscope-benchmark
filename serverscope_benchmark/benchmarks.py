@@ -55,12 +55,16 @@ class DownloadBenchmark(Benchmark):
         result = []
         size = 0
         time = 0
+
         for _ in range(count):
             s = run_and_print(curl)
-            match = re.search(r"Downloaded\s+([0-9]+)\sbytes\sin\s([0-9.]+)\ssec", s)
+            match = re.search(r"Downloaded\s+([0-9]+)\sbytes\sin\s([0-9.,]+)\ssec", s)
             if match:
-                size += round(int(match.group(1)) / 1024 / 1024, 2)  # megabytes
-                time += float(match.group(2))  # sec
+                size += round(int(match.group(1)) / 1024 / 1024, 2) #megabytes
+                try:
+                    time += float(match.group(2)) #sec
+                except ValueError:
+                    time += float(match.group(2).replace(',', '.'))
             result.append(s)
         v = round(size * 8 / time, 2)
         r = "Finished! Average download speed is %.2f Mbit/s" % v
