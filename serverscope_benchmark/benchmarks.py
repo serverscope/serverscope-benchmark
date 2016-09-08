@@ -60,9 +60,9 @@ class DownloadBenchmark(Benchmark):
             s = run_and_print(curl)
             match = re.search(r"Downloaded\s+([0-9]+)\sbytes\sin\s([0-9.,]+)\ssec", s)
             if match:
-                size += round(int(match.group(1)) / 1024 / 1024, 2) #megabytes
+                size += round(int(match.group(1)) / 1024 / 1024, 2)  # megabytes
                 try:
-                    time += float(match.group(2)) #sec
+                    time += float(match.group(2))  # sec
                 except ValueError:
                     time += float(match.group(2).replace(',', '.'))
             result.append(s)
@@ -183,7 +183,7 @@ class UnixbenchBenchmark(Benchmark):
     _unixbench_dir = './byte-unixbench'
 
     def download(self):
-        url = 'https://github.com/serverscope/serverscope-tools/raw/master/unixbench-5.1.3-patched.tar.gz'
+        url = 'https://github.com/serverscope/serverscope-tools/raw/master/unixbench-5.1.3-patched.tar.gz'  # noqa
         print_(c.GREEN + 'Downloading & running UnixBench from %s' % url + c.RESET)
 
         subprocess.call(['curl', '-s', '-L', '-o', 'unixbench.tar.gz', url],
