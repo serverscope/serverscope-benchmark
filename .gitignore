@@ -1,0 +1,5 @@
+*.sw[po]
+*.pyc
+/build/
+/dist/
+/serverscope_benchmark.egg-info/
