@@ -485,7 +485,7 @@ class UnixbenchBenchmark(Benchmark):
     _unixbench_dir = './byte-unixbench'
 
     def download(self):
-        unixbench_url = 'https://raw.githubusercontent.com/anton-ko/serverscope-benchmark/master/benchmarks/unixbench-5.1.3-patched.tar.gz'
+        unixbench_url = 'https://raw.githubusercontent.com/serverscope/serverscope-tools/master/unixbench-5.1.3-patched.tar.gz'
 
         print_(c.GREEN + 'Downloading & running UnixBench from %s' % unixbench_url + c.RESET)
 
