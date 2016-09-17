@@ -72,7 +72,8 @@ elif [ "$installer" == "yum" ]; then
     install "$installer" perl-Time-HiRes
     install "$installer" epel-release
     install "$installer" python34
-    install "$installer" python3-pip
+    install "$installer" python34-setuptools
+    easy_install-3.4 pip
 else
     echo "Can not install dependencies automatically."
     echo "Please ensure you have Python3 installed."
