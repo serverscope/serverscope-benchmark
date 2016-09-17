@@ -36,7 +36,7 @@ class SpeedtestBenchmark(Benchmark):
 
     def run(self):
         print_(c.GREEN + "Running speedtest benchmark:" + c.RESET)
-        return run_and_print(["python", "speedtest.py", "--verbose"])
+        return run_and_print(["python", "speedtest.py", "--verbose"]).replace("'", "&#39;")
 
 
 class DownloadBenchmark(Benchmark):
