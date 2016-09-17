@@ -5,14 +5,16 @@
 # process command line switches
 _update=no
 _virtualenv=no
+_cleanup=no
 _email=
 _plan=
 _included_benchmarks=all
 
-while getopts "uve:p:i:" opt; do
+while getopts "uvce:p:i:" opt; do
     case $opt in
         u) _update=yes;;
         v) _virtualenv=yes;;
+        c) _cleanup=yes;;
         e) _email=$OPTARG;;
         p) _plan=$OPTARG;;
         i) _included_benchmarks=$OPTARG;;
@@ -24,7 +26,7 @@ install () {
     installer="$1"
     program="$2"
 
-    which "$program" > /dev/null && return
+    # which "$program" > /dev/null && return
 
     echo "Installing $program"
     $installer install -y "$program"
@@ -54,35 +56,48 @@ if [ $_update == "yes" ]; then
 fi
 
 if [ "$installer" == "apt-get" ]; then
-    install "$installer" python3 python3-pip
-    install "$installer" build-essential libaio-dev
-
-    if [ $_virtualenv == "yes" ]; then
-        install "$installer" python-virtualenv
-    fi
+    install "$installer" python3
+    install "$installer" python3-venv
+    install "$installer" python3-pip
+    install "$installer" build-essential
+    install "$installer" libaio-dev
 elif [ "$installer" == "yum" ]; then
-    install "$installer" make automake gcc gcc-c++ kernel-devel libaio-devel perl-Time-HiRes
+    install "$installer" make
+    install "$installer" automake
+    install "$installer" gcc
+    install "$installer" gcc-c++
+    install "$installer" kernel-devel
+    install "$installer" libaio-devel
+    install "$installer" perl-Time-HiRes
+    install "$installer" epel-release
+    install "$installer" python34
+    install "$installer" python3-pip
 else
     echo "Can not install dependencies automatically."
-    echo "Please ensure you have Python3 and pip installed."
+    echo "Please ensure you have Python3 installed."
 fi
 
 if [ $_virtualenv == "yes" ]; then
     # create and activate python virtual environment
     serverscope_venv=$(mktemp -d)
-    virtualenv "$serverscope_venv"
+    python3 -m venv "$serverscope_venv"
     # shellcheck source=/dev/null
     source "$serverscope_venv/bin/activate"
 fi
 
-echo pip install serverscope_benchmark
+python3 -m pip install --yes serverscope-benchmark
 if [ -z "$_plan" ] || [ -z "$_email" ]; then
     echo Run serverscope manually: python -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\"
 else
-    python -m serverscope_benchmark -e "$_email" -p "$_plan" -i "$_included_benchmarks"
+    python3 -m serverscope_benchmark -e "$_email" -p "$_plan" -i "$_included_benchmarks"
 fi
 
-if [ $_virtualenv == "yes" ]; then
-    # cleanup virtual environment
-    rm -rf "$serverscope_venv"
+if [ $_cleanup == "yes" ]; then
+    if [ $_virtualenv == "yes" ]; then
+        # delete virtual environment
+        rm -rf "$serverscope_venv"
+    else
+        # uninstall globally installed package
+        python3 -m pip uninstall --yes serverscope-benchmark
+    fi
 fi
