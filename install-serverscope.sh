@@ -25,10 +25,6 @@ shift $((OPTIND - 1))
 install () {
     installer="$1"
     program="$2"
-
-    # which "$program" > /dev/null && return
-
-    echo "Installing $program"
     $installer install -y "$program"
 }
 
@@ -36,7 +32,7 @@ get_installer () {
     which yum > /dev/null && installer="yum"
     which apt-get > /dev/null && installer="apt-get"
 
-    # detect OpenSuse, Arch, etc
+    # TODO detect OpenSuse, Arch, etc
 
     echo $installer
 }
@@ -57,8 +53,13 @@ fi
 
 if [ "$installer" == "apt-get" ]; then
     install "$installer" python3
-    install "$installer" python3-venv
     install "$installer" python3-pip
+    install "$installer" python3-venv
+    if [ $? -ne 0 ]; then
+        # This is a fix for Ubuntu 14.04 bug
+        # https://bugs.launchpad.net/ubuntu/+source/python3.4/+bug/1532231
+        install "$installer" python3.4-venv
+    fi
     install "$installer" build-essential
     install "$installer" libaio-dev
 elif [ "$installer" == "yum" ]; then
@@ -77,21 +78,28 @@ else
     echo "Please ensure you have Python3 installed."
 fi
 
+# optionally create and activate python virtual environment
 if [ $_virtualenv == "yes" ]; then
-    # create and activate python virtual environment
     serverscope_venv=$(mktemp -d)
     python3 -m venv "$serverscope_venv"
     # shellcheck source=/dev/null
     source "$serverscope_venv/bin/activate"
 fi
 
-python3 -m pip install --yes serverscope-benchmark
+# install serverscope-benchmark package
+python3 -m pip install serverscope-benchmark
+
+# run serverscope_benchmark
 if [ -z "$_plan" ] || [ -z "$_email" ]; then
-    echo Run serverscope manually: python -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\"
+    echo Run serverscope manually:
+    echo
+    echo "    python3 -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
+    echo
 else
     python3 -m serverscope_benchmark -e "$_email" -p "$_plan" -i "$_included_benchmarks"
 fi
 
+# cleanup
 if [ $_cleanup == "yes" ]; then
     if [ $_virtualenv == "yes" ]; then
         # delete virtual environment
