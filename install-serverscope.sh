@@ -61,9 +61,9 @@ __ensure_python2 () {
     which python > /dev/null
     if [ $? -ne 0 ]; then
         if [ "$installer" == "apt-get" ]; then
-            __install $installer python-minimal
+            __install "$installer" python-minimal
         elif [ "$installer" == "yum" ]; then
-            __install $installer python2
+            __install "$installer" python2
         else
             __failed_to_install_dependencies
         fi
