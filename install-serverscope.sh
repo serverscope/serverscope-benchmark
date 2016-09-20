@@ -61,9 +61,9 @@ __ensure_python2 () {
     which python > /dev/null
     if [ $? -ne 0 ]; then
         if [ "$installer" == "apt-get" ]; then
-            __install $installer python-minimal
+            __install "$installer" python-minimal
         elif [ "$installer" == "yum" ]; then
-            __install $installer python2
+            __install "$installer" python2
         else
             __failed_to_install_dependencies
         fi
@@ -114,7 +114,7 @@ if [ $? -eq 0 ]; then
     # optionally create and activate python virtual environment
     if [ $_virtualenv == "yes" ]; then
         __ensure_virtualenv
-        serverscope_venv=$(mktemp -d)
+        serverscope_venv=$(mktemp --tmpdir=. -d serverscope.XXXXXXXXXX)
         virtualenv "$serverscope_venv"
         # shellcheck source=/dev/null
         source "$serverscope_venv/bin/activate"
