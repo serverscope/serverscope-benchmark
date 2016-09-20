@@ -22,13 +22,13 @@ while getopts "uvce:p:i:" opt; do
 done
 shift $((OPTIND - 1))
 
-install () {
+__install () {
     installer="$1"
     program="$2"
     $installer install -y "$program"
 }
 
-get_installer () {
+__get_installer () {
     installer=unknown
     which yum > /dev/null && installer="yum"
     which apt-get > /dev/null && installer="apt-get"
@@ -42,7 +42,7 @@ get_installer () {
     fi
 }
 
-update_installer () {
+__update_installer () {
     installer="$1"
     if [ "$installer" == "apt-get" ] || [ "$installer" == "yum" ]; then
         $installer update -y
@@ -57,12 +57,13 @@ __failed_to_install_dependencies () {
 }
 
 __ensure_python2 () {
+    installer="$1"
     which python > /dev/null
     if [ $? -ne 0 ]; then
         if [ "$installer" == "apt-get" ]; then
-            install $installer python-minimal
+            __install $installer python-minimal
         elif [ "$installer" == "yum" ]; then
-            install $installer python2
+            __install $installer python2
         else
             __failed_to_install_dependencies
         fi
@@ -86,24 +87,24 @@ __ensure_virtualenv () {
 }
 
 
-installer=$(get_installer)
-__ensure_python2
+_installer=$(__get_installer)
+__ensure_python2 "$_installer"
 if [ $? -eq 0 ]; then
     if [ $_update == "yes" ]; then
-        update_installer "$installer"
+        __update_installer "$_installer"
     fi
 
-    if [ "$installer" == "apt-get" ]; then
-        install "$installer" build-essential
-        install "$installer" libaio-dev
-    elif [ "$installer" == "yum" ]; then
-        install "$installer" make
-        install "$installer" automake
-        install "$installer" gcc
-        install "$installer" gcc-c++
-        install "$installer" kernel-devel
-        install "$installer" libaio-devel
-        install "$installer" perl-Time-HiRes
+    if [ "$_installer" == "apt-get" ]; then
+        __install "$_installer" build-essential
+        __install "$_installer" libaio-dev
+    elif [ "$_installer" == "yum" ]; then
+        __install "$_installer" make
+        __install "$_installer" automake
+        __install "$_installer" gcc
+        __install "$_installer" gcc-c++
+        __install "$_installer" kernel-devel
+        __install "$_installer" libaio-devel
+        __install "$_installer" perl-Time-HiRes
     else
         __failed_to_install_dependencies
     fi
