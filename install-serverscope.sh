@@ -53,26 +53,47 @@ update_installer () {
 
 __failed_to_install_dependencies () {
     echo "Can not install dependencies automatically."
-    echo "Please ensure you have Python3 installed."
     echo
+}
+
+__ensure_python2 () {
+    which python > /dev/null
+    if [ $? -ne 0 ]; then
+        if [ "$installer" == "apt-get" ]; then
+            install $installer python-minimal
+        elif [ "$installer" == "yum" ]; then
+            install $installer python2
+        else
+            __failed_to_install_dependencies
+        fi
+    fi
+}
+
+__ensure_pip () {
+    which pip > /dev/null
+    if [ $? -ne 0 ]; then
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python get-pip.py
+    fi
+}
+
+__ensure_virtualenv () {
+    which virtualenv > /dev/null
+    if [ $? -ne 0 ]; then
+        __ensure_pip
+        pip install virtualenv
+    fi
 }
 
 
 installer=$(get_installer)
+__ensure_python2
 if [ $? -eq 0 ]; then
     if [ $_update == "yes" ]; then
         update_installer "$installer"
     fi
 
     if [ "$installer" == "apt-get" ]; then
-        install "$installer" python3
-        install "$installer" python3-pip
-        install "$installer" python3-venv
-        if [ $? -ne 0 ]; then
-            # This is a fix for Ubuntu 14.04 bug
-            # https://bugs.launchpad.net/ubuntu/+source/python3.4/+bug/1532231
-            install "$installer" python3.4-venv
-        fi
         install "$installer" build-essential
         install "$installer" libaio-dev
     elif [ "$installer" == "yum" ]; then
@@ -83,33 +104,32 @@ if [ $? -eq 0 ]; then
         install "$installer" kernel-devel
         install "$installer" libaio-devel
         install "$installer" perl-Time-HiRes
-        install "$installer" epel-release
-        install "$installer" python34
-        install "$installer" python34-setuptools
-        easy_install-3.4 pip
     else
         __failed_to_install_dependencies
     fi
 
+    __ensure_pip
+
     # optionally create and activate python virtual environment
     if [ $_virtualenv == "yes" ]; then
+        __ensure_virtualenv
         serverscope_venv=$(mktemp -d)
-        python3 -m venv "$serverscope_venv"
+        virtualenv "$serverscope_venv"
         # shellcheck source=/dev/null
         source "$serverscope_venv/bin/activate"
     fi
 
     # install serverscope-benchmark package
-    python3 -m pip install serverscope-benchmark
+    pip install serverscope-benchmark
 
     # run serverscope_benchmark
     if [ -z "$_plan" ] || [ -z "$_email" ]; then
         echo Run serverscope manually:
         echo
-        echo "    python3 -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
+        echo "    python -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
         echo
     else
-        python3 -m serverscope_benchmark -e "$_email" -p "$_plan" -i "$_included_benchmarks"
+        python -m serverscope_benchmark.__main__ -e "$_email" -p "$_plan" -i "$_included_benchmarks"
     fi
 
     # cleanup
@@ -119,7 +139,7 @@ if [ $? -eq 0 ]; then
             rm -rf "$serverscope_venv"
         else
             # uninstall globally installed package
-            python3 -m pip uninstall --yes serverscope-benchmark
+            pip uninstall --yes serverscope-benchmark
         fi
     fi
 else
