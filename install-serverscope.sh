@@ -114,7 +114,7 @@ if [ $? -eq 0 ]; then
     # optionally create and activate python virtual environment
     if [ $_virtualenv == "yes" ]; then
         __ensure_virtualenv
-        serverscope_venv=$(mktemp -d)
+        serverscope_venv=$(mktemp --tmpdir=. -d serverscope.XXXXXXXXXX)
         virtualenv "$serverscope_venv"
         # shellcheck source=/dev/null
         source "$serverscope_venv/bin/activate"
