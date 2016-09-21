@@ -6,7 +6,7 @@ import signal
 import locale
 
 from six import print_
-from six.moves.urllib.parse import urlencode
+from six.moves import urllib
 
 
 class Color:
@@ -60,17 +60,21 @@ def run_and_print(command, cwd=None):
 
 
 def post_results(data, devnull):
-    encoded = urlencode(data)
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'text/plain',
+        'User-Agent': 'serverscope.io benchmark tool'
+    }
 
-    curl = [
-        'curl', '-k', '-X', 'POST',
-        '-H', 'Content-Type: application/x-www-form-urlencoded',
-        '-H', 'Accept: text/plain',
-        '-H', 'User-Agent: serverscope.io benchmark tool',
-        '--data', encoded,
-        'https://serverscope.io/api/trials.txt'
-    ]
-    subprocess.call(curl)
+    encoded = urllib.parse.urlencode(data)
+    request = urllib.request.Request('https://serverscope.io/api/trials.txt', encoded)
+
+    for x in headers:
+        request.add_header(x, headers[x])
+
+    response = urllib.request.urlopen(request)
+    print_(response.read())
+    response.close()
 
 
 def get_geo_info():

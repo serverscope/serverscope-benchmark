@@ -26,6 +26,7 @@ if __name__ == '__main__':
         "email": args["email"], "plan": args["plan"], "locale": args["locale"]}
     payload["os"] = platform.dist()
 
+    cwd = os.getcwd()
     try:
         tmp_dir = tempfile.mkdtemp(prefix='serverscope-', dir='.')
         os.chdir(tmp_dir)
@@ -51,4 +52,5 @@ if __name__ == '__main__':
             post_results(payload, devnull)
     finally:
         devnull.close()
+        os.chdir(cwd)
         shutil.rmtree(tmp_dir)
