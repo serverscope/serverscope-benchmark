@@ -62,6 +62,7 @@ __ensure_python2 () {
     if [ $? -ne 0 ]; then
         if [ "$installer" == "apt-get" ]; then
             __install "$installer" python-minimal
+            __install "$installer" libpython-stdlib
         elif [ "$installer" == "yum" ]; then
             __install "$installer" python2
         else
