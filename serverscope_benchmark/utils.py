@@ -7,6 +7,7 @@ import locale
 
 from six import print_
 from six.moves import urllib
+import requests
 
 
 class Color:
@@ -60,21 +61,15 @@ def run_and_print(command, cwd=None):
 
 
 def post_results(data, devnull):
+    url = 'https://serverscope.io/api/trials.txt'
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'text/plain',
         'User-Agent': 'serverscope.io benchmark tool'
     }
 
-    encoded = urllib.parse.urlencode(data)
-    request = urllib.request.Request('https://serverscope.io/api/trials.txt', encoded)
-
-    for x in headers:
-        request.add_header(x, headers[x])
-
-    response = urllib.request.urlopen(request)
-    print_(response.read())
-    response.close()
+    response = requests.post(url, data=urllib.parse.urlencode(data), headers=headers)
+    print_(response.text)
 
 
 def get_geo_info():
