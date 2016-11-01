@@ -19,6 +19,10 @@ setup(
     include_package_data=True,
     install_requires=[
         'six',
+        'requests',
+        'pyopenssl',
+        'pyasn1',
+        'ndg-httpsclient'
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
