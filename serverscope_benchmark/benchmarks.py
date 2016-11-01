@@ -137,7 +137,7 @@ class FioBenchmark(Benchmark):
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-            '--runtime=60', '--ioengine=libaio', '--randrepeat=1',
+            '--runtime=60', '--randrepeat=1',
             '--iodepth=32', '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
             '--group_reporting'
@@ -147,7 +147,7 @@ class FioBenchmark(Benchmark):
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-            '--runtime=60', '--ioengine=libaio', '--randrepeat=1', '--iodepth=32',
+            '--runtime=60', '--randrepeat=1', '--iodepth=32',
             '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
             '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
             '--group_reporting'
@@ -157,7 +157,7 @@ class FioBenchmark(Benchmark):
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-            '--runtime=60', '--filename=benchmark', '--ioengine=libaio',
+            '--runtime=60', '--filename=benchmark',
             '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
             '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
             '--blocksize=4k', '--group_reporting'
@@ -167,7 +167,7 @@ class FioBenchmark(Benchmark):
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
-            '--filename=benchmark', '--ioengine=libaio', '--randrepeat=1',
+            '--filename=benchmark', '--randrepeat=1',
             '--iodepth=32',  '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
             '--group_reporting'
