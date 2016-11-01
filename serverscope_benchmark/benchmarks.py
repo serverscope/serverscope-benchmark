@@ -79,12 +79,7 @@ class DDBenchmark(Benchmark):
     def run(self):
         result = {}
 
-        ram = get_total_ram(self.specs['meminfo'])
-        if ram['ram_mb'] <= 1024:
-            dd_size = 32
-        else:
-            dd_size = int(round(ram['ram_mb']/32))
-
+        dd_size = 32
         cmd = [
             'dd', 'if=/dev/zero', 'of=benchmark',
             'bs=64K', 'count=%sK' % dd_size, 'conv=fdatasync']
@@ -124,20 +119,15 @@ class FioBenchmark(Benchmark):
             sys.exit(-1)
 
     def run(self):
-        ram = get_total_ram(self.specs['meminfo'])
-        ram_mb = ram['ram_mb']
-        jobs = 8
         print_(c.GREEN + 'Running IO tests:' + c.RESET)
 
-        if ram_mb <= 1024:
-            size = round(1024 / jobs)
-        else:
-            size = round(int(ram['ram_mb'])*2 / jobs)
+        jobs = 8
+        size = round(2048 / jobs)
         result = {}
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-            '--runtime=60', '--ioengine=libaio', '--randrepeat=1',
+            '--runtime=60', '--randrepeat=1',
             '--iodepth=32', '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
             '--group_reporting'
@@ -147,7 +137,7 @@ class FioBenchmark(Benchmark):
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-            '--runtime=60', '--ioengine=libaio', '--randrepeat=1', '--iodepth=32',
+            '--runtime=60', '--randrepeat=1', '--iodepth=32',
             '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
             '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
             '--group_reporting'
@@ -157,7 +147,7 @@ class FioBenchmark(Benchmark):
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
-            '--runtime=60', '--filename=benchmark', '--ioengine=libaio',
+            '--runtime=60', '--filename=benchmark',
             '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
             '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
             '--blocksize=4k', '--group_reporting'
@@ -167,7 +157,7 @@ class FioBenchmark(Benchmark):
 
         cmd = [
             './fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
-            '--filename=benchmark', '--ioengine=libaio', '--randrepeat=1',
+            '--filename=benchmark', '--randrepeat=1',
             '--iodepth=32',  '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
             '--group_reporting'
