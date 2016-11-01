@@ -98,6 +98,9 @@ if [ $? -eq 0 ]; then
     if [ "$_installer" == "apt-get" ]; then
         __install "$_installer" build-essential
         __install "$_installer" libaio-dev
+        __install "$_installer" python-dev
+        __install "$_installer" libssl-dev
+        __install "$_installer" libffi-dev
     elif [ "$_installer" == "yum" ]; then
         __install "$_installer" make
         __install "$_installer" automake
@@ -106,6 +109,9 @@ if [ $? -eq 0 ]; then
         __install "$_installer" kernel-devel
         __install "$_installer" libaio-devel
         __install "$_installer" perl-Time-HiRes
+        __install "$_installer" python-devel
+        __install "$_installer" openssl-devel
+        __install "$_installer" libffi-devel
     else
         __failed_to_install_dependencies
     fi
