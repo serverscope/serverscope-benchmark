@@ -76,6 +76,9 @@ __ensure_pip () {
     if [ $? -ne 0 ]; then
         curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
         python get-pip.py
+        if [ $_cleanup == "yes" ]; then
+            rm get-pip.py
+        fi
     fi
 }
 
