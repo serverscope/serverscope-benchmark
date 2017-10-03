@@ -60,13 +60,16 @@ __ensure_python2 () {
     installer="$1"
     which python > /dev/null
     if [ $? -ne 0 ]; then
-        if [ "$installer" == "apt-get" ]; then
-            __install "$installer" python-minimal
-            __install "$installer" libpython-stdlib
-        elif [ "$installer" == "yum" ]; then
-            __install "$installer" python2
-        else
-            __failed_to_install_dependencies
+        if [ $_update == "yes" ]; then
+            __update_installer "$_installer"
+            if [ "$installer" == "apt-get" ]; then
+                __install "$installer" python-minimal
+                __install "$installer" libpython-stdlib
+            elif [ "$installer" == "yum" ]; then
+                __install "$installer" python2
+            else
+                __failed_to_install_dependencies
+            fi
         fi
     fi
 }
