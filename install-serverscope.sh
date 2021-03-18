@@ -46,7 +46,7 @@ __update_installer () {
     installer="$1"
     if [ "$installer" == "apt-get" ]; then
         $installer update -y
-    else if [ "$installer" == "yum" ]; then
+    elif [ "$installer" == "yum" ]; then
         $installer makecache
     else
         echo "Unknown installer"
@@ -79,7 +79,7 @@ __ensure_python2 () {
 __ensure_pip () {
     which pip > /dev/null
     if [ $? -ne 0 ]; then
-        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        curl  https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
         python get-pip.py
         if [ $_cleanup == "yes" ]; then
             rm get-pip.py
