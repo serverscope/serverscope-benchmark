@@ -44,8 +44,10 @@ __get_installer () {
 
 __update_installer () {
     installer="$1"
-    if [ "$installer" == "apt-get" ] || [ "$installer" == "yum" ]; then
+    if [ "$installer" == "apt-get" ]; then
         $installer update -y
+    else if [ "$installer" == "yum" ]; then
+        $installer makecache
     else
         echo "Unknown installer"
     fi
