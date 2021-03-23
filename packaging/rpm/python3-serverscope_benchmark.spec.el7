@@ -1,0 +1,64 @@
+Name:           python3-serverscope_benchmark
+Version:        1.0.4
+Release:        1%{?dist}
+Summary:        A benchmarking suite
+
+License:        MIT
+URL:            https://pypi.org/project/serverscope-benchmark/
+Source0:        https://files.pythonhosted.org/packages/c5/87/0054f51fdfdac911862a0d1138944085312b836f9dbc5e3f623ab09c603a/serverscope_benchmark-%{version}.tar.gz
+#Source0:        https://pypi.python.org/packages/source/s/serverscope_benchmark/serverscope_benchmark-%{version}.tar.gz
+
+BuildArch:      noarch
+
+%bcond_with python3_other
+
+%description
+A benchmarking suite focused on processing speed, I/O performance and
+network bandwidth.
+
+%package -n python%{python3_pkgversion}-serverscope_benchmark
+Summary:        A benchmarking suite
+BuildRequires:  python%{python3_pkgversion}-devel
+
+# Requires: curl
+Requires: automake
+Requires: gcc
+Requires: gcc-c++
+Requires: kernel-devel
+Requires: libaio-devel
+Requires: perl-Time-HiRes
+Requires: python-devel
+Requires: openssl-devel
+Requires: libffi-devel
+Requires: python%{python3_pkgversion}-six
+Requires: python%{python3_pkgversion}-requests
+Requires: python%{python3_pkgversion}-pyOpenSSL
+Requires: python%{python3_pkgversion}-pyasn1
+
+%description -n python%{python3_pkgversion}-serverscope_benchmark
+A benchmarking suite focused on processing speed, I/O performance and
+network bandwidth.
+
+This is the Python %{python3_pkgversion} build of the module.
+
+
+%prep
+%setup -q -n serverscope_benchmark-%{version}
+
+
+%build
+%py3_build
+
+
+%install
+%py3_install
+
+%files -n python%{python3_pkgversion}-serverscope_benchmark
+%license LICENSE
+%doc README.md
+%{python3_sitelib}/serverscope_benchmark*
+
+
+%changelog
+* Tue Mar 23 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-1
+- Initial package
