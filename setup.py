@@ -22,7 +22,6 @@ setup(
         'requests',
         'pyopenssl',
         'pyasn1',
-        'ndg-httpsclient'
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
