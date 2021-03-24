@@ -30,6 +30,8 @@ Requires: openssl-devel
 Requires: libffi-devel
 Requires: python%{python3_pkgversion}-devel
 Requires: python%{python3_pkgversion}-requests
+Requires: python%{python3_pkgversion}-distro
+
 
 %description -n python%{python3_pkgversion}-serverscope_benchmark
 A benchmarking suite focused on processing speed, I/O performance and

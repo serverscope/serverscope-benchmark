@@ -4,8 +4,8 @@
 Serverscope.io benchmark tool
 """
 
+import distro
 import os
-import platform
 import tempfile
 import shutil
 
@@ -22,10 +22,7 @@ if __name__ == '__main__':
 
     payload = {
         "email": args["email"], "plan": args["plan"], "locale": args["locale"]}
-    # NOTE: platform.dist() deprecation since 3.8
-    payload["os"] = platform.dist()
-    if payload["os"] == ('', '', '') and os.path.isfile('/etc/system-release'):
-        payload["os"] = platform.linux_distribution(supported_dists=['system'])
+    payload["os"] = distro.linux_distribution()
 
     # NOTE: write pushd/popd interface as context manager
     cwd = os.getcwd()
