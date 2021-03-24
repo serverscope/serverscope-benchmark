@@ -10,7 +10,7 @@ from .utils import Color as c, run_and_print
 from .server import get_total_ram
 
 
-class Benchmark(object):
+class Benchmark:
     def __init__(self, specs, stdout):
         self.specs = specs
         self.stdout = stdout
@@ -176,9 +176,8 @@ class UnixbenchBenchmark(Benchmark):
 
         subprocess.call(['curl', '-s', '-L', '-o', 'unixbench.tar.gz', url],
                         stdout=self.stdout)
-        tar = tarfile.open("unixbench.tar.gz")
-        tar.extractall()
-        tar.close()
+        with tarfile.open("unixbench.tar.gz") as tar:
+            tar.extractall()
 
     def run(self):
         return run_and_print(['./Run'], cwd='%s/UnixBench' % self._unixbench_dir)

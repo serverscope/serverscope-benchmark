@@ -59,7 +59,7 @@ This is the Python %{python3_pkgversion} build of the module.
 
 %changelog
 * Wed Mar 24 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-2
-- Removing unneeded deps for python3.X
+- General code adaptation to python3.5+
 
 * Tue Mar 23 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-1
 - Initial package

@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 import subprocess
 import signal
 import locale
 import urllib
 import requests
+
+from contextlib import contextmanager
 
 
 class Color:
@@ -83,3 +86,11 @@ def get_geo_info():
         sys.exit(1)
 
     return geo
+
+@contextmanager
+def pushd(new_d):
+    """ Implements pushd/popd interface """
+    previous_d = os.getcwd()
+    os.chdir(new_d)
+    yield
+    os.chdir(previous_d)

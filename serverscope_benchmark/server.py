@@ -36,9 +36,8 @@ def get_total_ram(meminfo):
         ram = round(ram/1024)
     else:
         ram_units = 'M'
-    return {'ram': ram, 'units': ram_units, 'ram_mb': ram_mb}
 
-    return 'N/A'
+    return {'ram': ram, 'units': ram_units, 'ram_mb': ram_mb}
 
 
 def get_cpu_info_val(property, cpuinfo):
@@ -60,14 +59,12 @@ def get_cpu_info(cpuinfo):
 
 def get_nodev_filesystems():
     r = []
-    f = open('/proc/filesystems', 'r')
-    try:
+    with open('/proc/filesystems', 'r') as f:
         for line in f:
             match = re.search(r'^nodev\s+(\S+)', line)
             if match:
                 r.append(match.group(1))
-    finally:
-        f.close()
+
     return r
 
 
