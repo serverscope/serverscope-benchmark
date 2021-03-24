@@ -2,7 +2,6 @@
 
 import sys
 
-from six import print_
 from .utils import Color as c
 
 try:
@@ -40,7 +39,7 @@ def get_parser():
     mandatories = ['plan', 'email']
     for m in mandatories:
         if (m not in args) or args[m] is None:
-            print_("Required parameter " + c.RED + c.BOLD + m + c.RESET + " is missing")
+            print("Required parameter " + c.RED + c.BOLD + m + c.RESET + " is missing")
             parser.print_help()
             sys.exit(1)
 

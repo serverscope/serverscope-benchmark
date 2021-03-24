@@ -1,6 +1,6 @@
 Name:           python3-serverscope_benchmark
 Version:        1.0.4
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A benchmarking suite
 
 License:        MIT
@@ -20,20 +20,16 @@ network bandwidth.
 Summary:        A benchmarking suite
 BuildRequires:  python%{python3_pkgversion}-devel
 
-# Requires: curl
 Requires: automake
 Requires: gcc
 Requires: gcc-c++
 Requires: kernel-devel
 Requires: libaio-devel
 Requires: perl-Time-HiRes
-Requires: python-devel
 Requires: openssl-devel
 Requires: libffi-devel
-Requires: python%{python3_pkgversion}-six
+Requires: python%{python3_pkgversion}-devel
 Requires: python%{python3_pkgversion}-requests
-Requires: python%{python3_pkgversion}-pyOpenSSL
-Requires: python%{python3_pkgversion}-pyasn1
 
 %description -n python%{python3_pkgversion}-serverscope_benchmark
 A benchmarking suite focused on processing speed, I/O performance and
@@ -60,5 +56,8 @@ This is the Python %{python3_pkgversion} build of the module.
 
 
 %changelog
+* Wed Mar 24 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-2
+- Removing unneeded deps for python3.X
+
 * Tue Mar 23 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-1
 - Initial package

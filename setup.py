@@ -18,10 +18,7 @@ setup(
     long_description=open('README.md').read(),
     include_package_data=True,
     install_requires=[
-        'six',
         'requests',
-        'pyopenssl',
-        'pyasn1',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -29,12 +26,12 @@ setup(
         'Intended Audience :: System Administrators',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
+        'Operating System :: POSIX :: Linux',
         'Operating System :: POSIX :: Other',
         'Operating System :: Unix',
         'Environment :: Console',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Topic :: System :: Benchmark',
     ],
 )

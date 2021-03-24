@@ -5,7 +5,6 @@
 import subprocess
 import re
 
-from six import print_
 from .utils import Color as c
 
 
@@ -17,7 +16,7 @@ def get_sys_info(obj, devnull):
                              stderr=devnull,
                              universal_newlines=True).communicate()[0]
     except subprocess.CalledProcessError:
-        print_('Warning: /proc/%s does not exist' % (obj))
+        print('Warning: /proc/%s does not exist' % (obj))
     return r
 
 
@@ -95,17 +94,17 @@ def get_total_disk(devnull):
 
 def get_server_specs(devnull):
     """Return server specs."""
-    print_(c.GREEN + 'Collecting server specs... ' + c.RESET)
+    print(c.GREEN + 'Collecting server specs... ' + c.RESET)
     specs = {}
     specs['cpuinfo'] = get_sys_info('cpuinfo', devnull)
     specs['meminfo'] = get_sys_info('meminfo', devnull)
     df = get_total_disk(devnull)
     specs['diskinfo'] = df['output']
-    print_(df['output'])
+    print(df['output'])
     ram = get_total_ram(specs['meminfo'])
     cpu = get_cpu_info(specs['cpuinfo'])
-    print_('%(count)s × %(name)s' % cpu, end="")
-    print_('  |  %(ram)s%(units)s RAM' % ram, end="")
-    print_('  |  %s disk' % df['total'])
+    print('%(count)s × %(name)s' % cpu, end="")
+    print('  |  %(ram)s%(units)s RAM' % ram, end="")
+    print('  |  %s disk' % df['total'])
 
     return specs

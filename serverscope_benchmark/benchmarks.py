@@ -9,8 +9,6 @@ import tarfile
 from .utils import Color as c, run_and_print
 from .server import get_total_ram
 
-from six import print_
-
 
 class Benchmark(object):
     def __init__(self, specs, stdout):
@@ -31,11 +29,11 @@ class SpeedtestBenchmark(Benchmark):
 
     def download(self):
         url = 'https://raw.githubusercontent.com/serverscope/serverscope-tools/master/speedtest.py'
-        print_(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
+        print(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
         subprocess.call(['curl', '-s', '-L', '-o', 'speedtest.py', url], stdout=self.stdout)
 
     def run(self):
-        print_(c.GREEN + "Running speedtest benchmark:" + c.RESET)
+        print(c.GREEN + "Running speedtest benchmark:" + c.RESET)
         return run_and_print(["python", "speedtest.py", "--verbose"]).replace("'", "&#39;")
 
 
@@ -43,11 +41,11 @@ class DownloadBenchmark(Benchmark):
     code = 'download'
 
     def run(self):
-        print_(c.GREEN + "Running download benchmark:" + c.RESET)
+        print(c.GREEN + "Running download benchmark:" + c.RESET)
         url = 'http://cachefly.cachefly.net/100mb.test'
         count = 5
 
-        print_(c.GREEN + " Downloading %s x%d" % (url, count) + c.RESET)
+        print(c.GREEN + " Downloading %s x%d" % (url, count) + c.RESET)
 
         curl = ["curl", "-o", "/dev/null", "--silent", "--progress-bar",
                 "--write-out", 'Downloaded %{size_download} bytes in %{time_total} sec\n',
@@ -69,7 +67,7 @@ class DownloadBenchmark(Benchmark):
         v = round(size * 8 / time, 2)
         r = "Finished! Average download speed is %.2f Mbit/s" % v
         result.append(r)
-        print_(c.GREEN + r + c.RESET)
+        print(c.GREEN + r + c.RESET)
         return "".join(result)
 
 
@@ -84,7 +82,7 @@ class DDBenchmark(Benchmark):
             'dd', 'if=/dev/zero', 'of=benchmark',
             'bs=64K', 'count=%sK' % dd_size, 'conv=fdatasync']
         dd_str = ' '.join(cmd)
-        print_(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
+        print(c.GREEN + "Running dd as follows:\n  " + dd_str + c.RESET)
         result["base64k"] = dd_str + "\n" + run_and_print(cmd)
 
         dd_size = dd_size * 64
@@ -92,11 +90,11 @@ class DDBenchmark(Benchmark):
             'dd', 'if=/dev/zero', 'of=benchmark',
             'bs=1M', 'count=%s' % dd_size, 'conv=fdatasync']
         dd_str = ' '.join(cmd)
-        print_(c.GREEN + "  " + dd_str + c.RESET)
+        print(c.GREEN + "  " + dd_str + c.RESET)
         result["base1m"] = dd_str + "\n" + run_and_print(cmd)
 
         os.remove('benchmark')
-        print_("", end=c.RESET)
+        print("", end=c.RESET)
 
         return result
 
@@ -107,7 +105,7 @@ class FioBenchmark(Benchmark):
 
     def download(self):
         url = 'https://github.com/serverscope/serverscope-tools/raw/master/fio-2.8.tar.gz'
-        print_(c.GREEN + 'Downloading & building fio from %s ' % url + c.RESET)
+        print(c.GREEN + 'Downloading & building fio from %s ' % url + c.RESET)
 
         subprocess.call(['curl', '-s', '-L', '-o', 'fio.tar.gz', url], stdout=self.stdout)
         tar = tarfile.open("fio.tar.gz")
@@ -115,11 +113,11 @@ class FioBenchmark(Benchmark):
         tar.close()
         os.remove('fio.tar.gz')
         if subprocess.call(['make'], cwd=self._fio_dir, stdout=self.stdout):
-            print_(c.RED + 'Couldn\'t build fio. Exiting.')
+            print(c.RED + 'Couldn\'t build fio. Exiting.')
             sys.exit(-1)
 
     def run(self):
-        print_(c.GREEN + 'Running IO tests:' + c.RESET)
+        print(c.GREEN + 'Running IO tests:' + c.RESET)
 
         jobs = 8
         size = round(2048 / jobs)
@@ -174,7 +172,7 @@ class UnixbenchBenchmark(Benchmark):
 
     def download(self):
         url = 'https://github.com/serverscope/serverscope-tools/raw/master/unixbench-5.1.3-patched.tar.gz'  # noqa
-        print_(c.GREEN + 'Downloading & running UnixBench from %s' % url + c.RESET)
+        print(c.GREEN + 'Downloading & running UnixBench from %s' % url + c.RESET)
 
         subprocess.call(['curl', '-s', '-L', '-o', 'unixbench.tar.gz', url],
                         stdout=self.stdout)
@@ -217,7 +215,7 @@ def get_selected_benchmark_classes(include):
     """
 
     if not include or ('all' in include.split(',')):
-        print_("All benchmarks selected.")
+        print("All benchmarks selected.")
         return ALL_BENCHMARKS
 
     if include:
@@ -227,6 +225,6 @@ def get_selected_benchmark_classes(include):
             if cls:
                 result.append(cls)
             else:
-                print_("%s benchmark hasn't been recognised. Use these: " % i, end="")
-                print_(', '.join([bb.code for bb in ALL_BENCHMARKS]))
+                print("%s benchmark hasn't been recognised. Use these: " % i, end="")
+                print(', '.join([bb.code for bb in ALL_BENCHMARKS]))
         return result

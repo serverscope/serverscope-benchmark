@@ -4,9 +4,7 @@ import sys
 import subprocess
 import signal
 import locale
-
-from six import print_
-from six.moves import urllib
+import urllib
 import requests
 
 
@@ -69,19 +67,19 @@ def post_results(data, devnull):
     }
 
     response = requests.post(url, data=urllib.parse.urlencode(data), headers=headers)
-    print_(response.text)
+    print(response.text)
 
 
 def get_geo_info():
     """Return geo location information."""
-    print_(c.GREEN + 'Retrieving server location... ' + c.RESET)
+    print(c.GREEN + 'Retrieving server location... ' + c.RESET)
     try:
         cmd = ['curl', '-s', 'http://geoip.nekudo.com/api/']
         geo = subprocess.Popen(cmd,
                                stdout=subprocess.PIPE,
                                universal_newlines=True).communicate()[0]
     except ValueError:
-        print_(c.RED + "geoip API error. Terminating..." + c.RESET)
+        print(c.RED + "geoip API error. Terminating..." + c.RESET)
         sys.exit(1)
 
     return geo
