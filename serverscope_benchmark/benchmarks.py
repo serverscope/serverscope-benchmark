@@ -28,13 +28,14 @@ class SpeedtestBenchmark(Benchmark):
     code = 'speedtest'
 
     def download(self):
-        url = 'https://raw.githubusercontent.com/serverscope/serverscope-tools/master/speedtest.py'
+        #url = 'https://raw.githubusercontent.com/serverscope/serverscope-tools/master/speedtest.py'
+        url = 'https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py'
         print(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
         subprocess.call(['curl', '-s', '-L', '-o', 'speedtest.py', url], stdout=self.stdout)
 
     def run(self):
         print(c.GREEN + "Running speedtest benchmark:" + c.RESET)
-        return run_and_print(["python", "speedtest.py", "--verbose"]).replace("'", "&#39;")
+        return run_and_print(["python3", "speedtest.py", "--json"]).replace("'", "&#39;")
 
 
 class DownloadBenchmark(Benchmark):

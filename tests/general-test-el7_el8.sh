@@ -1,11 +1,17 @@
 #!/bin/bash
 
+if [[ $# -ne 1 ]] || [[ "$1" -ne "7"  && "$1" -ne "8" ]];  then
+    echo "Usage: program.sh [7|8]"
+    exit 1
+fi
+
 if [ "$(pwd)" == "/" ]; then
     echo "It's prohibided to be run from system root (/)!"
     exit 1
 fi
 
-TESTROOT=$(pwd)/testroot-el7/
+RELVER=$1
+TESTROOT=$(pwd)/testroot-el$RELVER/
 SS_DIR=$TESTROOT/tmp/ss_dir
 RESULT="1"
 
@@ -49,7 +55,7 @@ function ctrl_c() {
 }
 
 # TOOD: remove python2 in the future, currently required by speedtest.py benchmark
-yum install -y --setopt=releasever=7 --installroot $TESTROOT system-release epel-release basesystem curl python3 python3-setuptools make python2 \
+yum install -y --setopt=releasever=$RELVER --installroot $TESTROOT system-release epel-release basesystem curl python3 python3-setuptools make \
     automake gcc gcc-c++ kernel-devel libaio-devel
 
 __setup_testroot
@@ -62,7 +68,7 @@ cp -r ../README.md $SS_DIR
 chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
 
 # Do actual test
-chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP"
+chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i speedtest,download,dd,fio,unixbench
 RESULT="$?"
 
 __clean_up_testroot
