@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # Q: this devnull...
     with open(os.devnull, 'w') as devnull:
-        with tempfile.TemporaryDirectory(prefix='serverscope-') as tmp_dir, pushd(tmp_dir):
+        with tempfile.TemporaryDirectory(prefix='serverscope-', dir=os.getcwd()) as tmp_dir, pushd(tmp_dir):
 
             payload['geo'] = get_geo_info()
             payload['specs'] = get_server_specs(devnull)
