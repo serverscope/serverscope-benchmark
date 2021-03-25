@@ -48,9 +48,9 @@ function ctrl_c() {
     exit 1
 }
 
-
 # TOOD: remove python2 in the future, currently required by speedtest.py benchmark
-yum install -y --setopt=releasever=7 --installroot $TESTROOT system-release epel-release basesystem curl python3 python3-setuptools python2
+yum install -y --setopt=releasever=7 --installroot $TESTROOT system-release epel-release basesystem curl python3 python3-setuptools make python2 \
+    automake gcc gcc-c++ kernel-devel libaio-devel
 
 __setup_testroot
 
@@ -61,9 +61,8 @@ cp -r ../README.md $SS_DIR
 
 chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
 
-# TODO: set full test, now only one for speedup purpose
 # Do actual test
-chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i dd
+chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP"
 RESULT="$?"
 
 __clean_up_testroot
