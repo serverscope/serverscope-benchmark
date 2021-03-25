@@ -1,0 +1,85 @@
+%global modname serverscope_benchmark
+%global build_wheel 0
+
+%bcond_without python3
+
+%global python3_wheelname %{modname}-%{version}-py3-none-any.whl
+
+Epoch:          1
+Name:           python-%{modname}
+Version:        1.0.4
+Release:        1%{?dist}
+Summary:        A benchmarking suite
+
+License:        MIT
+URL:            https://pypi.org/project/serverscope-benchmark/
+Source0:        https://files.pythonhosted.org/packages/c5/87/0054f51fdfdac911862a0d1138944085312b836f9dbc5e3f623ab09c603a/serverscope_benchmark-%{version}.tar.gz
+
+BuildArch:      noarch
+
+%global _description \
+A benchmarking suite focused on processing speed, I/O performance and \
+network bandwidth.
+
+%description %{_description}
+
+%if %{with python3}
+%package -n python3-%{modname}
+Summary:        %{summary}
+%{?python_provide:%python_provide python3-%{modname}}
+Obsoletes:      platform-python-%{modname} < %{version}-%{release}
+BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
+
+%if 0%{?build_wheel}
+BuildRequires:  python%{python3_pkgversion}-pip
+BuildRequires:  python%{python3_pkgversion}-wheel
+%endif
+Requires: python%{python3_pkgversion}-requests
+# needs epel8
+Requires: python%{python3_pkgversion}-distro
+
+%description -n python3-%{modname} %{_description}
+Python 3 version.
+
+%endif
+
+
+%prep
+%autosetup -n %{modname}-%{version}
+
+
+%build
+%if %{with python3}
+%if 0%{?build_wheel}
+%py3_build_wheel
+%else
+%py3_build
+%endif
+%endif
+
+
+%install
+%if %{with python3}
+%if 0%{?build_wheel}
+%py3_install_wheel %{python3_wheelname}
+%else
+%py3_install
+%endif
+%endif
+
+
+%if %{with python3}
+%files -n python3-%{modname}
+%license LICENSE
+%doc README.md
+%if 0%{?build_wheel}
+%{python3_sitelib}/%{modname}-*.dist-info/
+%endif
+%{python3_sitelib}/%{modname}*
+%endif
+
+
+%changelog
+* Thu Mar 25 2021 Mikhail Campos Guadamuz <plageat90@gmail.com> - 1.0.4-1
+- initial packaging
