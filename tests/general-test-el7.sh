@@ -1,0 +1,77 @@
+#!/bin/bash
+
+if [ "$(pwd)" == "/" ]; then
+    echo "It's prohibided to be run from system root (/)!"
+    exit 1
+fi
+
+TESTROOT=$(pwd)/testroot-el7/
+SS_DIR=$TESTROOT/tmp/ss_dir
+RESULT="1"
+
+function __setup_testroot() {
+    mount --bind /proc $TESTROOT/proc
+
+    chroot $TESTROOT mknod -m 622 /dev/console c 5 1
+    chroot $TESTROOT mknod -m 666 /dev/null c 1 3
+    chroot $TESTROOT mknod -m 666 /dev/zero c 1 5
+    chroot $TESTROOT mknod -m 666 /dev/ptmx c 5 2
+    chroot $TESTROOT mknod -m 666 /dev/tty c 5 0
+    chroot $TESTROOT mknod -m 444 /dev/random c 1 8
+    chroot $TESTROOT mknod -m 444 /dev/urandom c 1 9
+    chroot $TESTROOT chown -v root:tty /dev/{console,ptmx,tty}
+
+    # TODO: ugly code
+    # but just for networking
+    # but anyway, ro mode, should be safe
+    mount --bind -o ro /etc/ $TESTROOT/etc/
+}
+
+function __clean_up_testroot() {
+  # clean up
+  if [[ "$TESTROOT" == "/" ]] || [[ -z "$TESTROOT" ]]; then
+      echo "$TESTROOT is broken while was testing and won't be deleted"
+      exit 1
+  fi
+
+  umount $TESTROOT/proc
+  umount $TESTROOT/etc/
+
+  echo "rm -rf $TESTROOT"
+  rm -rf $TESTROOT
+}
+
+trap ctrl_c INT
+function ctrl_c() {
+    echo "** Test aborted by CTRL-C"
+    __clean_up_testroot
+    exit 1
+}
+
+
+# TOOD: remove python2 in the future, currently required by speedtest.py benchmark
+yum install -y --setopt=releasever=7 --installroot $TESTROOT system-release epel-release basesystem curl python3 python3-setuptools python2
+
+__setup_testroot
+
+mkdir -p $SS_DIR
+cp -r ../serverscope_benchmark $SS_DIR
+cp -r ../setup.py $SS_DIR
+cp -r ../README.md $SS_DIR
+
+chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
+
+# TODO: set full test, now only one for speedup purpose
+# Do actual test
+chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i dd
+RESULT="$?"
+
+__clean_up_testroot
+
+if [ "$RESULT" -eq "0" ]; then
+    echo "TEST PASSED"
+    exit 0
+else
+    echo "TEST FAILED"
+    exit 1
+fi
