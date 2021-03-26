@@ -35,9 +35,11 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python%{python3_pkgversion}-pip
 BuildRequires:  python%{python3_pkgversion}-wheel
 %endif
-Requires: make
-Requires: gcc
+
 Requires: fio
+Requires: gcc
+Requires: make
+Requires: which
 Requires: python%{python3_pkgversion}-requests
 # needs epel8
 Requires: python%{python3_pkgversion}-distro

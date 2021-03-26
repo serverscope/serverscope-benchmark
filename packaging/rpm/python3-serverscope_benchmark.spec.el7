@@ -20,9 +20,10 @@ network bandwidth.
 Summary:        A benchmarking suite
 BuildRequires:  python%{python3_pkgversion}-devel
 
-Requires: make
-Requires: gcc
 Requires: fio
+Requires: gcc
+Requires: make
+Requires: which
 Requires: python%{python3_pkgversion}-devel
 Requires: python%{python3_pkgversion}-requests
 Requires: python%{python3_pkgversion}-distro
