@@ -14,7 +14,7 @@ RELVER=$1
 TESTROOT=$(pwd)/testroot-el$RELVER/
 SS_DIR=$TESTROOT/tmp/ss_dir
 RESULT="1"
-DEPS_LIST="system-release epel-release basesystem curl python3 python3-setuptools make gcc fio"
+DEPS_LIST="system-release epel-release basesystem curl python3 python3-setuptools perl make gcc fio"
 
 function __setup_testroot() {
     mount --bind /proc $TESTROOT/proc
