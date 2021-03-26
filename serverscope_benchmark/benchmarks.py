@@ -101,67 +101,59 @@ class DDBenchmark(Benchmark):
 
 class FioBenchmark(Benchmark):
     code = 'fio'
-    _fio_dir = './fio-fio-2.8'
-
-    def download(self):
-        url = 'https://github.com/serverscope/serverscope-tools/raw/master/fio-2.8.tar.gz'
-        print(c.GREEN + 'Downloading & building fio from %s ' % url + c.RESET)
-
-        subprocess.call(['curl', '-s', '-L', '-o', 'fio.tar.gz', url], stdout=self.stdout)
-        tar = tarfile.open("fio.tar.gz")
-        tar.extractall()
-        tar.close()
-        os.remove('fio.tar.gz')
-        if subprocess.call(['make'], cwd=self._fio_dir, stdout=self.stdout):
-            print(c.RED + 'Couldn\'t build fio. Exiting.')
-            sys.exit(-1)
 
     def run(self):
-        print(c.GREEN + 'Running IO tests:' + c.RESET)
-
         jobs = 8
         size = round(2048 / jobs)
         result = {}
 
+        if not os.path.exists('/bin/fio'):
+            print("{}{}{}".format(c.ORANGE,
+                                  "fio is not available, skipping. Please install fio package",
+                                  c.RESET))
+            return result
+        else:
+            print(c.GREEN + 'Running IO tests:' + c.RESET)
+
         cmd = [
-            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
             '--runtime=60', '--randrepeat=1',
             '--iodepth=32', '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
-            '--group_reporting'
+            '--group_reporting', '--output-format=json'
         ]
         result['random-read'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd=self._fio_dir)
+            run_and_print(cmd)
 
         cmd = [
-            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
             '--runtime=60', '--randrepeat=1', '--iodepth=32',
             '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
             '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
-            '--group_reporting'
+            '--group_reporting', '--output-format=json'
         ]
         result['random-read-direct'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd=self._fio_dir)
+            run_and_print(cmd)
 
         cmd = [
-            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
             '--runtime=60', '--filename=benchmark',
             '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
             '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
-            '--blocksize=4k', '--group_reporting'
+            '--blocksize=4k', '--group_reporting', '--output-format=json'
         ]
         result['random-write-direct'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd=self._fio_dir)
+            run_and_print(cmd)
 
         cmd = [
-            './fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
+            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
             '--filename=benchmark', '--randrepeat=1',
             '--iodepth=32',  '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
-            '--group_reporting'
+            '--group_reporting', '--output-format=json'
         ]
         result['random-write'] = " ".join(cmd) + "\n" + \
-            run_and_print(cmd, cwd=self._fio_dir)
+            run_and_print(cmd)
 
         return result
 
@@ -180,6 +172,7 @@ class UnixbenchBenchmark(Benchmark):
             tar.extractall()
 
     def run(self):
+        # TODO: if failed while was runnning, the only stdout could show this
         return run_and_print(['./Run'], cwd='%s/UnixBench' % self._unixbench_dir)
 
 

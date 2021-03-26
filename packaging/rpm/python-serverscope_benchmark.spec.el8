@@ -8,7 +8,7 @@
 Epoch:          1
 Name:           python-%{modname}
 Version:        1.0.4
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A benchmarking suite
 
 License:        MIT
@@ -35,6 +35,9 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python%{python3_pkgversion}-pip
 BuildRequires:  python%{python3_pkgversion}-wheel
 %endif
+Requires: make
+Requires: gcc
+Requires: fio
 Requires: python%{python3_pkgversion}-requests
 # needs epel8
 Requires: python%{python3_pkgversion}-distro
@@ -81,5 +84,8 @@ Python 3 version.
 
 
 %changelog
-* Thu Mar 25 2021 Mikhail Campos Guadamuz <plageat90@gmail.com> - 1.0.4-1
+* Fri Mar 26 2021 Mikhail Campos <plageat90@gmail.com> - 1:1.0.4-2
+- switching to use the system fio requirement
+
+* Thu Mar 25 2021 Mikhail Campos <plageat90@gmail.com> - 1:1.0.4-1
 - initial packaging

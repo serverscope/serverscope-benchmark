@@ -1,6 +1,6 @@
 Name:           python3-serverscope_benchmark
 Version:        1.0.4
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        A benchmarking suite
 
 License:        MIT
@@ -20,14 +20,9 @@ network bandwidth.
 Summary:        A benchmarking suite
 BuildRequires:  python%{python3_pkgversion}-devel
 
-Requires: automake
+Requires: make
 Requires: gcc
-Requires: gcc-c++
-Requires: kernel-devel
-Requires: libaio-devel
-Requires: perl-Time-HiRes
-Requires: openssl-devel
-Requires: libffi-devel
+Requires: fio
 Requires: python%{python3_pkgversion}-devel
 Requires: python%{python3_pkgversion}-requests
 Requires: python%{python3_pkgversion}-distro
@@ -58,6 +53,9 @@ This is the Python %{python3_pkgversion} build of the module.
 
 
 %changelog
+* Fri Mar 26 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-3
+- switching to use the system fio requirement
+
 * Wed Mar 24 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-2
 - General code adaptation to python3.5+
 

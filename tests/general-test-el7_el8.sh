@@ -14,6 +14,7 @@ RELVER=$1
 TESTROOT=$(pwd)/testroot-el$RELVER/
 SS_DIR=$TESTROOT/tmp/ss_dir
 RESULT="1"
+DEPS_LIST="system-release epel-release basesystem curl python3 python3-setuptools make gcc fio"
 
 function __setup_testroot() {
     mount --bind /proc $TESTROOT/proc
@@ -54,9 +55,7 @@ function ctrl_c() {
     exit 1
 }
 
-# TOOD: remove python2 in the future, currently required by speedtest.py benchmark
-yum install -y --setopt=releasever=$RELVER --installroot $TESTROOT system-release epel-release basesystem curl python3 python3-setuptools make \
-    automake gcc gcc-c++ kernel-devel libaio-devel
+yum install -y --setopt=releasever=$RELVER --installroot $TESTROOT $DEPS_LIST
 
 __setup_testroot
 
