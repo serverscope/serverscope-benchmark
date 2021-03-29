@@ -145,7 +145,7 @@ class FioBenchmark(Benchmark):
         size = round(2048 / jobs)
         result = {}
 
-        if not os.path.exists('/bin/fio'):
+        if not os.path.exists('/usr/bin/fio'):
             print("{}{}{}".format(c.ORANGE,
                                   "fio is not available, skipping. Please install fio package",
                                   c.RESET))
@@ -154,7 +154,7 @@ class FioBenchmark(Benchmark):
             print(c.GREEN + 'Running IO tests:' + c.RESET)
 
         cmd = [
-            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '/usr/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
             '--runtime=60', '--randrepeat=1',
             '--iodepth=32', '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
@@ -164,7 +164,7 @@ class FioBenchmark(Benchmark):
             run_and_print(cmd)
 
         cmd = [
-            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '/usr/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
             '--runtime=60', '--randrepeat=1', '--iodepth=32',
             '--direct=1', '--invalidate=1', '--verify=0', '--verify_fatal=0',
             '--numjobs=%d' % jobs, '--rw=randread', '--blocksize=4k',
@@ -174,7 +174,7 @@ class FioBenchmark(Benchmark):
             run_and_print(cmd)
 
         cmd = [
-            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
+            '/usr/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size,
             '--runtime=60', '--filename=benchmark',
             '--randrepeat=1', '--iodepth=32', '--direct=1', '--invalidate=1',
             '--verify=0', '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite',
@@ -184,7 +184,7 @@ class FioBenchmark(Benchmark):
             run_and_print(cmd)
 
         cmd = [
-            '/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
+            '/usr/bin/fio', '--time_based', '--name=benchmark', '--size=%dM' % size, '--runtime=60',
             '--filename=benchmark', '--randrepeat=1',
             '--iodepth=32',  '--invalidate=1', '--verify=0',
             '--verify_fatal=0', '--numjobs=%d' % jobs, '--rw=randwrite', '--blocksize=4k',
