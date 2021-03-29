@@ -5,6 +5,7 @@ import sys
 import re
 import subprocess
 import tarfile
+from contextlib import redirect_stdout
 
 from .utils import Color as c, run_and_print
 from .server import get_total_ram
@@ -26,6 +27,31 @@ class Benchmark:
 
 class SpeedtestBenchmark(Benchmark):
     code = 'speedtest'
+    min_distance = 30.0
+    serv_count = 15
+
+    def _closest_servers(self):
+        servers = []
+        i = 0
+
+        with open(os.devnull,'w') as devnull, redirect_stdout(devnull):
+            sp_list = run_and_print(["python3", "speedtest.py", "--list"])
+        print('Selecting %s servers that are not too close:' % self.serv_count)
+        pattern = re.compile('(\d+)\).*\[(\d+.\d+) km\]')
+
+        for line in sp_list.split('\n'):
+            result = pattern.search(line)
+            if not result:
+                continue
+            distance = result.group(2)
+            if float(distance) > self.min_distance:
+                servers.append(result.group(1))
+                print("%s. %s" % (i + 1, line))
+                i = i + 1
+            if i >= self.serv_count:
+                break
+
+        return servers
 
     def download(self):
         url = 'https://raw.githubusercontent.com/serverscope/serverscope-tools/master/speedtest_py3.py'
@@ -34,7 +60,19 @@ class SpeedtestBenchmark(Benchmark):
 
     def run(self):
         print(c.GREEN + "Running speedtest benchmark:" + c.RESET)
-        return run_and_print(["python3", "speedtest.py", "--json"]).replace("'", "&#39;")
+
+        servers = self._closest_servers()
+
+        result = {}
+        print('Testing upload speeds')
+
+        for i, sp_serv in enumerate(servers):
+            out = run_and_print(["python3", "speedtest.py", '--no-download', '--server', sp_serv, '--json' ]).replace("'", "&#39;")
+            if not out.startswith('{'):
+                out = ''
+            result[str(i + 1)] = out
+
+        return result
 
 
 class DownloadBenchmark(Benchmark):
