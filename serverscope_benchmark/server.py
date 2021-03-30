@@ -100,7 +100,7 @@ def get_server_specs(devnull):
     print(df['output'])
     ram = get_total_ram(specs['meminfo'])
     cpu = get_cpu_info(specs['cpuinfo'])
-    print('%(count)s × %(name)s' % cpu, end="")
+    print('%(count)s x %(name)s' % cpu, end="")
     print('  |  %(ram)s%(units)s RAM' % ram, end="")
     print('  |  %s disk' % df['total'])
 
