@@ -17,6 +17,7 @@ setup(
     description='serverscope.io benchmark tool',
     long_description=open('README.md').read(),
     include_package_data=True,
+    python_requires='>=3.5',
     install_requires=[
         'requests',
         'distro'
