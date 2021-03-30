@@ -61,7 +61,9 @@ debootstrap --variant=buildd --arch amd64 $UBUNTU_CODENAME $TESTROOT http://arch
 __setup_testroot
 
 chroot $TESTROOT apt-get update -y
-chroot $TESTROOT apt-get install -y $DEPS_LIST
+for DEP in $DEPS_LIST; do
+  chroot $TESTROOT apt-get install -y $DEP
+done
 chroot $TESTROOT locale-gen en_GB.UTF-8
 
 mkdir -p $SS_DIR
@@ -72,7 +74,7 @@ cp -r ../README.md $SS_DIR
 chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
 
 # Do actual test
-chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i dd #speedtest,download,dd,fio,unixbench
+chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i speedtest,download,dd,fio,unixbench
 RESULT="$?"
 
 __clean_up_testroot
