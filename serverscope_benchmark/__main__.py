@@ -4,10 +4,23 @@
 Serverscope.io benchmark tool
 """
 
-import distro
 import os
+import sys
 import tempfile
 import shutil
+
+# Needed until support for old distros is done
+try:
+    import distro
+    get_dist = distro.linux_distribution
+except ImportError:
+    if (sys.version_info.major == 3 and sys.version_info.minor >= 8):
+        import platform
+        get_dist = platform.dist
+    else:
+        print('python3-distro is required, please install it either with pip3 or package manager')
+        sys.exit(1)
+
 
 from .cli import get_parser
 from .benchmarks import get_selected_benchmark_classes
@@ -20,7 +33,7 @@ if __name__ == '__main__':
 
     payload = {
         "email": args["email"], "plan": args["plan"], "locale": args["locale"]}
-    payload["os"] = distro.linux_distribution()
+    payload["os"] = get_dist()
 
     # Q: this devnull...
     with open(os.devnull, 'w') as devnull:
