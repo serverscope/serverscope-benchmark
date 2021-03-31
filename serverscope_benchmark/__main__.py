@@ -35,26 +35,24 @@ if __name__ == '__main__':
         "email": args["email"], "plan": args["plan"], "locale": args["locale"]}
     payload["os"] = get_dist()
 
-    # Q: this devnull...
-    with open(os.devnull, 'w') as devnull:
-        with tempfile.TemporaryDirectory(prefix='serverscope-', dir=os.getcwd()) as tmp_dir, pushd(tmp_dir):
+    with tempfile.TemporaryDirectory(prefix='serverscope-', dir=os.getcwd()) as tmp_dir, pushd(tmp_dir):
 
-            payload['geo'] = get_geo_info()
-            payload['specs'] = get_server_specs(devnull)
+        payload['geo'] = get_geo_info()
+        payload['specs'] = get_server_specs()
 
-            benchmarks = {}
-            print("", end=c.RESET)
+        benchmarks = {}
+        print("", end=c.RESET)
 
-            for BenchmarkClass in get_selected_benchmark_classes(args.get('include', None)):
-                benchmark = BenchmarkClass(specs=payload['specs'], stdout=devnull)
-                benchmark.download()
-                result = benchmark.run()
-                if result:
-                    benchmarks[benchmark.code] = result
+        for BenchmarkClass in get_selected_benchmark_classes(args.get('include', None)):
+            benchmark = BenchmarkClass(specs=payload['specs'])
+            benchmark.download()
+            result = benchmark.run()
+            if result:
+                benchmarks[benchmark.code] = result
 
-            payload['benchmarks'] = benchmarks
+        payload['benchmarks'] = benchmarks
 
-            if payload.get('benchmarks', None):
-                print(c.GREEN + c.BOLD)
-                print("All done! Submitting the results..." + c.RESET)
-                post_results(payload, devnull)
+        if payload.get('benchmarks', None):
+            print(c.GREEN + c.BOLD)
+            print("All done! Submitting the results..." + c.RESET)
+            post_results(payload)

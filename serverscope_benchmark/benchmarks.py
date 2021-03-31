@@ -12,9 +12,8 @@ from .server import get_total_ram
 
 
 class Benchmark:
-    def __init__(self, specs, stdout):
+    def __init__(self, specs):
         self.specs = specs
-        self.stdout = stdout
 
     def download(self):
         """Abstract method, may be overridden in child class."""
@@ -56,7 +55,7 @@ class SpeedtestBenchmark(Benchmark):
     def download(self):
         url = 'https://raw.githubusercontent.com/serverscope/serverscope-tools/master/speedtest_py3.py'
         print(c.GREEN + 'Downloading bandwidth benchmark from %s ' % url + c.RESET)
-        subprocess.call(['curl', '-s', '-L', '-o', 'speedtest.py', url], stdout=self.stdout)
+        subprocess.call(['curl', '-s', '-L', '-o', 'speedtest.py', url], stdout=subprocess.DEVNULL)
 
     def run(self):
         print(c.GREEN + "Running speedtest benchmark:" + c.RESET)
@@ -205,7 +204,7 @@ class UnixbenchBenchmark(Benchmark):
         print(c.GREEN + 'Downloading & running UnixBench from %s' % url + c.RESET)
 
         subprocess.call(['curl', '-s', '-L', '-o', 'unixbench.tar.gz', url],
-                        stdout=self.stdout)
+                        stdout=subprocess.DEVNULL)
         with tarfile.open("unixbench.tar.gz") as tar:
             tar.extractall()
 

@@ -8,12 +8,12 @@ import re
 from .utils import Color as c
 
 
-def get_sys_info(obj, devnull):
+def get_sys_info(obj):
     r = 'N/A'
     try:
         r = subprocess.Popen(['cat', '/proc/%s' % (obj)],
                              stdout=subprocess.PIPE,
-                             stderr=devnull,
+                             stderr=subprocess.DEVNULL,
                              universal_newlines=True).communicate()[0]
     except subprocess.CalledProcessError:
         print('Warning: /proc/%s does not exist' % (obj))
@@ -68,7 +68,7 @@ def get_nodev_filesystems():
     return r
 
 
-def get_total_disk(devnull):
+def get_total_disk():
     nodevs = get_nodev_filesystems()
     command = ['df']
     for fs in nodevs:
@@ -76,7 +76,7 @@ def get_total_disk(devnull):
         command.append(fs)
     df = subprocess.Popen(command,
                           stdout=subprocess.PIPE,
-                          stderr=devnull,
+                          stderr=subprocess.DEVNULL,
                           universal_newlines=True).communicate()[0]
 
     lines = df.split('\n')[1:]
@@ -89,13 +89,13 @@ def get_total_disk(devnull):
     return {"output": df, "total": '%dGB' % total}
 
 
-def get_server_specs(devnull):
+def get_server_specs():
     """Return server specs."""
     print(c.GREEN + 'Collecting server specs... ' + c.RESET)
     specs = {}
-    specs['cpuinfo'] = get_sys_info('cpuinfo', devnull)
-    specs['meminfo'] = get_sys_info('meminfo', devnull)
-    df = get_total_disk(devnull)
+    specs['cpuinfo'] = get_sys_info('cpuinfo')
+    specs['meminfo'] = get_sys_info('meminfo')
+    df = get_total_disk()
     specs['diskinfo'] = df['output']
     print(df['output'])
     ram = get_total_ram(specs['meminfo'])

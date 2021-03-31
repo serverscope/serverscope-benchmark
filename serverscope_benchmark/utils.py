@@ -42,7 +42,7 @@ def run_and_print(command, cwd=None):
     return ''.join(chunks)
 
 
-def post_results(data, devnull):
+def post_results(data):
     url = 'https://serverscope.io/api/trials.txt'
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
