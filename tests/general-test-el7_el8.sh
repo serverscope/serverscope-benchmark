@@ -67,7 +67,7 @@ cp -r ../README.md $SS_DIR
 chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
 
 # Do actual test
-chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i speedtest,download,dd,fio,unixbench
+LC_ALL="C.UTF-8" chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i speedtest,download,dd,fio,unixbench
 RESULT="$?"
 
 __clean_up_testroot
