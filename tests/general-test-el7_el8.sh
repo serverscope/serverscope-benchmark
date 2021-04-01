@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ `whoami` != 'root' ]; then
+   echo "You must be root to run tests"
+   exit 1
+fi
+
 if [[ $# -ne 1 ]] || [[ "$1" -ne "7"  && "$1" -ne "8" ]];  then
     echo "Usage: program.sh [7|8]"
     exit 1
@@ -15,6 +20,7 @@ TESTROOT=$(pwd)/testroot-el$RELVER/
 SS_DIR=$TESTROOT/tmp/ss_dir
 RESULT="1"
 DEPS_LIST="system-release epel-release basesystem curl python3 python3-setuptools perl make gcc fio"
+DIRA=$(dirname "$0")
 
 function __setup_testroot() {
     mount --bind /proc $TESTROOT/proc
@@ -60,9 +66,9 @@ yum install -y --setopt=releasever=$RELVER --installroot $TESTROOT $DEPS_LIST
 __setup_testroot
 
 mkdir -p $SS_DIR
-cp -r ../serverscope_benchmark $SS_DIR
-cp -r ../setup.py $SS_DIR
-cp -r ../README.md $SS_DIR
+cp -r $DIRA/../serverscope_benchmark $SS_DIR
+cp -r $DIRA/../setup.py $SS_DIR
+cp -r $DIRA/../README.md $SS_DIR
 
 chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
 

@@ -2,7 +2,9 @@
 
 sudo apt-get install python3-all python-all dh-python python3-stem python3-stdeb -y
 
-pushd ../../
+DIRA=$(dirname "$0")
+
+pushd $DIRA/../../
 rm -rf deb_dist/
 rm -rf dist/
 python3 setup.py --command-packages=stdeb.command sdist_dsc --depends3='curl, fio, make, gcc, perl'

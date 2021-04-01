@@ -1,10 +1,14 @@
 #!/bin/bash
 
+if [ `whoami` != 'root' ]; then
+  echo "You must be root to run tests"
+  exit 1
+fi
 
 cat /etc/os-release | grep -E 'Ubuntu|Debian' > /dev/null
- if [ $? -ne 0 ]; then
+  if [ $? -ne 0 ]; then
     echo "Test is intended to be run on Ubuntu/Debian, exiting"
-    exit 1
+  exit 1
 fi
 
 source /etc/os-release
@@ -39,6 +43,7 @@ TESTROOT=$(pwd)/testroot-$RELVER/
 SS_DIR=$TESTROOT/tmp/ss_dir
 RESULT="1"
 DEPS_LIST="make perl fio gcc python3-setuptools python3-distro python3-requests curl locales"
+DIRA=$(dirname "$0")
 
 function __setup_testroot() {
     mount --bind /proc $TESTROOT/proc
@@ -80,14 +85,15 @@ done
 chroot $TESTROOT locale-gen en_GB.UTF-8
 
 mkdir -p $SS_DIR
-cp -r ../serverscope_benchmark $SS_DIR
-cp -r ../setup.py $SS_DIR
-cp -r ../README.md $SS_DIR
+
+cp -r $DIRA/../serverscope_benchmark $SS_DIR
+cp -r $DIRA/../setup.py $SS_DIR
+cp -r $DIRA/../README.md $SS_DIR
 
 chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
 
 # Do actual test
-LC_ALL="C.UTF-8" chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i dd #speedtest,download,dd,fio,unixbench
+LC_ALL="C.UTF-8" chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i dd,speedtest,download,dd,fio,unixbench
 RESULT="$?"
 
 __clean_up_testroot
