@@ -1,9 +1,9 @@
 #!/bin/bash
 
 
-cat /etc/os-release | grep 'Ubuntu' > /dev/null
-if [ $? -ne 0 ]; then
-    echo "Test is intended to be run on Ubuntu, exiting"
+cat /etc/os-release | grep -E 'Ubuntu|Debian' > /dev/null
+ if [ $? -ne 0 ]; then
+    echo "Test is intended to be run on Ubuntu/Debian, exiting"
     exit 1
 fi
 
@@ -23,6 +23,18 @@ if [ "$(pwd)" == "/" ]; then
 fi
 
 RELVER=$UBUNTU_CODENAME
+if [ -z $RELVER ]; then
+  RELVER=$VERSION_CODENAME
+  if [ -z $RELVER ]; then
+    echo "This is not a valid Ubuntu/Debian release, aborting..."
+    exit 1
+  fi
+  echo "Bootstrapping for Debian $RELVER"
+  RELURL="http://deb.debian.org/debian/"
+else
+  echo "Bootstrapping for Ubuntu $RELVER"
+  RELURL="http://archive.ubuntu.com/ubuntu/"
+fi
 TESTROOT=$(pwd)/testroot-$RELVER/
 SS_DIR=$TESTROOT/tmp/ss_dir
 RESULT="1"
@@ -57,7 +69,7 @@ function ctrl_c() {
     exit 1
 }
 
-debootstrap --variant=buildd --arch amd64 $UBUNTU_CODENAME $TESTROOT http://archive.ubuntu.com/ubuntu/
+debootstrap --variant=buildd --arch amd64 $RELVER $TESTROOT $RELURL
 
 __setup_testroot
 
@@ -75,7 +87,7 @@ cp -r ../README.md $SS_DIR
 chroot $TESTROOT python3 /tmp/ss_dir/setup.py install
 
 # Do actual test
-LC_ALL="C.UTF-8" chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i speedtest,download,dd,fio,unixbench
+LC_ALL="C.UTF-8" chroot $TESTROOT python3 -m serverscope_benchmark -e "test-development@broken.com" -p "Plan|HostingP" -i dd #speedtest,download,dd,fio,unixbench
 RESULT="$?"
 
 __clean_up_testroot
