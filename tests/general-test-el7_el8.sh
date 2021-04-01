@@ -5,17 +5,14 @@ if [ `whoami` != 'root' ]; then
    exit 1
 fi
 
-if [[ $# -ne 1 ]] || [[ "$1" -ne "7"  && "$1" -ne "8" ]];  then
-    echo "Usage: program.sh [7|8]"
-    exit 1
-fi
+source /etc/os-release
+RELVER=$VERSION
 
 if [ "$(pwd)" == "/" ]; then
     echo "It's prohibided to be run from system root (/)!"
     exit 1
 fi
 
-RELVER=$1
 TESTROOT=$(pwd)/testroot-el$RELVER/
 SS_DIR=$TESTROOT/tmp/ss_dir
 RESULT="1"
