@@ -21,13 +21,6 @@ while getopts "uvce:p:i:" opt; do
 done
 shift $((OPTIND - 1))
 
-__install_deb() {
-    TMP_DEB="$(mktemp)"
-    wget -O "$TMP_DEB" $1
-    dpkg -i "$TMP_DEB"
-    rm -f "$TMP_DEB"
-}
-
 __install_deb_url() {
     PKGS=""
     apt update -y
@@ -62,7 +55,7 @@ elif [ "$NAME" == "Ubuntu" ]; then
     elif [ "$VERSION_CODENAME" == "bionic" ] || \
          [ "$VERSION_CODENAME" == "focal" ] || \
          [ "$VERSION_CODENAME" == "groovy" ]; then
-        __install_deb $DEB_PKG
+        __install_deb_url $DEB_PKG
     else
         echo "Only packages for Ubuntu 16.04/18.04/20.04/20.10 are available for installation"
         exit 1
@@ -70,7 +63,7 @@ elif [ "$NAME" == "Ubuntu" ]; then
 elif [ "$NAME" == "Debian GNU/Linux" ]; then
     if [ "$VERSION_ID" == "9" ] || \
        [ "$VERSION_ID" == "10" ]; then
-        __install_deb $DEB_PKG
+        __install_deb_url $DEB_PKG
     else
         echo "Only packages for Debian 9/10 are available for installation"
         exit 1
