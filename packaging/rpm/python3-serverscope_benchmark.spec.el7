@@ -1,12 +1,14 @@
+%global pversion 2.0.1
+%global prelease 1
+
 Name:           python3-serverscope_benchmark
-Version:        1.0.4
-Release:        3%{?dist}
+Version:        %{pversion}
+Release:        %{prelease}%{?dist}
 Summary:        A benchmarking suite
 
 License:        MIT
 URL:            https://pypi.org/project/serverscope-benchmark/
 Source0:        https://files.pythonhosted.org/packages/c5/87/0054f51fdfdac911862a0d1138944085312b836f9dbc5e3f623ab09c603a/serverscope_benchmark-%{version}.tar.gz
-#Source0:        https://pypi.python.org/packages/source/s/serverscope_benchmark/serverscope_benchmark-%{version}.tar.gz
 
 BuildArch:      noarch
 
@@ -54,6 +56,9 @@ This is the Python %{python3_pkgversion} build of the module.
 
 
 %changelog
+* Fri Apr 02 2021 Mikhail Campos <plageat90@gmail.com> - 2.0.1-1
+- version bump to 2.0.1
+
 * Fri Mar 26 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-3
 - switching to use the system fio requirement
 

@@ -1,3 +1,6 @@
+%global pversion 2.0.1
+%global prelease 1
+
 %global modname serverscope_benchmark
 %global build_wheel 0
 
@@ -7,8 +10,8 @@
 
 Epoch:          1
 Name:           python-%{modname}
-Version:        1.0.4
-Release:        2%{?dist}
+Version:        %{pversion}
+Release:        %{prelease}%{?dist}
 Summary:        A benchmarking suite
 
 License:        MIT
@@ -86,6 +89,9 @@ Python 3 version.
 
 
 %changelog
+* Fri Apr 02 2021 Mikhail Campos <plageat90@gmail.com> - 1:2.0.1-1
+- version bump up to 2.0.1
+
 * Fri Mar 26 2021 Mikhail Campos <plageat90@gmail.com> - 1:1.0.4-2
 - switching to use the system fio requirement
 
