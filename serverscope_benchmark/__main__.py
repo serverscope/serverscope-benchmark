@@ -37,6 +37,7 @@ if __name__ == '__main__':
 
     with tempfile.TemporaryDirectory(prefix='serverscope-', dir=os.getcwd()) as tmp_dir, pushd(tmp_dir):
 
+        payload['version'] = sys.modules[sys.modules[__name__].__package__].__version__
         payload['geo'] = get_geo_info()
         payload['specs'] = get_server_specs()
 
