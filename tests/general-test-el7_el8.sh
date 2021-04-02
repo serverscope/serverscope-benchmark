@@ -53,6 +53,8 @@ function __clean_up_testroot() {
 
 trap ctrl_c INT
 function ctrl_c() {
+    # to prevent SIGPIPE for broken pipe's stdout
+    exec &>$(tty)
     echo "** Test aborted by CTRL-C"
     __clean_up_testroot
     exit 1
