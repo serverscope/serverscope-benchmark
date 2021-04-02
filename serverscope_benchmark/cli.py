@@ -22,8 +22,7 @@ def get_parser():
     if args is not dict:
         args = vars(args)
 
-    mandatories = ['plan', 'email']
-    for m in mandatories:
+    for m in ['plan', 'email']:
         if (m not in args) or args[m] is None:
             print("Required parameter " + c.RED + c.BOLD + m + c.RESET + " is missing")
             parser.print_help()

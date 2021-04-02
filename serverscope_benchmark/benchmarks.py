@@ -229,10 +229,9 @@ ALL_BENCHMARKS = [SpeedtestBenchmark, DDBenchmark, FioBenchmark,
 
 def get_benchmark_class(code):
     """Return benchmark class with given code or None."""
-    search = [x for x in ALL_BENCHMARKS if x.code == code]
-    if search:
-        return search[0]
-
+    for x in ALL_BENCHMARKS:
+        if x.code == code:
+            return x
 
 def get_selected_benchmark_classes(include):
     """Return a list of benchmark classes specified with include argument.
