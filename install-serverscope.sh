@@ -12,7 +12,7 @@ _email=
 _plan=
 _included_benchmarks=all
 
-while getopts "uvce:p:i:" opt; do
+while getopts "e:p:i:" opt; do
     case $opt in
         e) _email=$OPTARG;;
         p) _plan=$OPTARG;;
@@ -34,7 +34,7 @@ __install_deb_url() {
     rm -f "$PKGS"
 }
 
-SS_BENCH_CMD="python3 -m serverscope_benchmark -e \"$_email\" -p \"$_plan\" -i \"$_included_benchmarks\""
+SS_BENCH_CMD="LC_ALL=\"C.UTF-8\" python3 -m serverscope_benchmark -e \"$_email\" -p \"$_plan\" -i \"$_included_benchmarks\""
 
 source /etc/os-release
 if [ "$NAME" == "CentOS Linux" ]; then
@@ -79,7 +79,7 @@ fi
 if [ -z "$_plan" ] || [ -z "$_email" ]; then
     echo Run serverscope manually:
     echo
-    echo "    python3 -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
+    echo " LC_ALL=\"C.UTF-8\" python3 -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
     echo
 else
     bash -c "$SS_BENCH_CMD"
