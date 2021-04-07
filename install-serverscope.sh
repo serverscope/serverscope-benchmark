@@ -34,15 +34,17 @@ __install_deb_url() {
     rm -f "$PKGS"
 }
 
-# try to determine locale
-LOCALER="$(locale -a | grep -i  utf | head -1)"
+# try hard to determine locale
+LOCALER="$(locale -a | grep -i c.utf | head -1)"
 if [ -z "$LOCALER" ]; then
-    echo "No any UTF8 locale has been found, please add support of UTF8 first"
-    exit 1
-else
-    LANG_PREFIX="LC_ALL=\"$LOCALER\""
+    LOCALER="$(locale -a | grep -i en_us.utf | head -1)"
+    if [ -z "$LOCALER" ]; then
+        echo "No any acceptable UTF8 locale has been found, add support of C.UTF8 first"
+        exit 1
+    fi
 fi
 
+LANG_PREFIX="LC_ALL=\"$LOCALER\""
 echo "Using locale: $LANG_PREFIX"
 
 SS_BENCH_CMD="$LANG_PREFIX python3 -m serverscope_benchmark -e \"$_email\" -p \"$_plan\" -i \"$_included_benchmarks\""
