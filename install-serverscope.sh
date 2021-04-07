@@ -34,7 +34,18 @@ __install_deb_url() {
     rm -f "$PKGS"
 }
 
-SS_BENCH_CMD="LC_ALL=\"C.UTF-8\" python3 -m serverscope_benchmark -e \"$_email\" -p \"$_plan\" -i \"$_included_benchmarks\""
+# try to determine locale
+LOCALER="$(locale -a | grep -i  utf | head -1)"
+if [ -z "$LOCALER" ]; then
+    echo "No any UTF8 locale has been found, please add support of UTF8 first"
+    exit 1
+else
+    LANG_PREFIX="LC_ALL=\"$LOCALER\""
+fi
+
+echo "Using locale: $LANG_PREFIX"
+
+SS_BENCH_CMD="$LANG_PREFIX python3 -m serverscope_benchmark -e \"$_email\" -p \"$_plan\" -i \"$_included_benchmarks\""
 
 source /etc/os-release
 if [ "$NAME" == "CentOS Linux" ]; then
@@ -80,7 +91,7 @@ fi
 if [ -z "$_plan" ] || [ -z "$_email" ]; then
     echo Run serverscope manually:
     echo
-    echo " LC_ALL=\"C.UTF-8\" python3 -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
+    echo " python3 -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
     echo
 else
     bash -c "$SS_BENCH_CMD"
