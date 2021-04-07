@@ -54,10 +54,11 @@ elif [ "$NAME" == "Ubuntu" ]; then
         __install_deb_url $UBUNTU_16_04_DEP $DEB_PKG
     elif [ "$VERSION_CODENAME" == "bionic" ] || \
          [ "$VERSION_CODENAME" == "focal" ] || \
-         [ "$VERSION_CODENAME" == "groovy" ]; then
+         [ "$VERSION_CODENAME" == "groovy" ] || \
+         [ "$VERSION_CODENAME" == "hirsute" ]; then
         __install_deb_url $DEB_PKG
     else
-        echo "Only packages for Ubuntu 16.04/18.04/20.04/20.10 are available for installation"
+        echo "Only packages for Ubuntu 16.04/18.04/20.04/20.10/21.04 are available for installation"
         exit 1
     fi
 elif [ "$NAME" == "Debian GNU/Linux" ]; then
