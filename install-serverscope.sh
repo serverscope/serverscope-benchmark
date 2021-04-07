@@ -35,9 +35,9 @@ __install_deb_url() {
 }
 
 # try hard to determine locale
-LOCALER="$(locale -a | grep -i c.utf | head -1)"
+LOCALER="$(locale -a | grep -i '^c.utf' | head -1)"
 if [ -z "$LOCALER" ]; then
-    LOCALER="$(locale -a | grep -i en_us.utf | head -1)"
+    LOCALER="$(locale -a | grep -i '^en_us.utf' | head -1)"
     if [ -z "$LOCALER" ]; then
         echo "No any acceptable UTF8 locale has been found, add support of C.UTF8 first"
         exit 1
