@@ -60,9 +60,12 @@ class SpeedtestBenchmark(Benchmark):
     def run(self):
         print(c.GREEN + "Running speedtest benchmark:" + c.RESET)
 
-        servers = self._closest_servers()
-
         result = {}
+        servers = self._closest_servers()
+        if not servers:
+            print(c.RED + "speedtest interface returns empty data, skipping benchmark..." + c.RESET)
+            return result
+
         print('Testing upload speeds')
 
         for i, sp_serv in enumerate(servers):
