@@ -1,0 +1,46 @@
+======================
+
+Currently serverscope-benchmark supports following distro:
+
+* Debian 9, 10
+* CentOS 7, 8
+* Ubuntu 16.04, 18.04, 20.04, 20.10, 21.04
+
+Use https://github.com/serverscope/serverscope-benchmark/raw/master/install-serverscope.sh
+to install serverscope-benchmark package in your system.
+
+Some notes about install-serverscope.sh:
+
+----------------------
+CentOS notes:
+
+* CentOS 7 enables uses EPEL repo in order to satisfy runtime dependencies (python36 from EPEL)
+
+----------------------
+Ubuntu notes:
+
+* Ubuntu 16.04 installs additional python3-distro in order to satisfy distro missing dep
+
+======================
+
+You can also build the packages manually.
+Clone the project from
+
+  https://github.com/serverscope/serverscope-benchmark.git
+
+and use:
+
+  make rpm (make deb)
+
+======================
+All other distributions may manually install following packages in your system:
+
+  fio, gcc, make, which, python3, perl, python3-distro, python3-requests, python3-setuptools
+
+Clone the project from
+
+  https://github.com/serverscope/serverscope-benchmark.git
+
+and use:
+
+  python3 setup.py install
