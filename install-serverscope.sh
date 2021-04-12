@@ -1,20 +1,19 @@
 #!/bin/bash
 
-# Installs serverscope dependencies
+# Installs serverscope
+
+CENTOS8_PKG="https://serverscope.io/packages/rpm/python3-serverscope_benchmark-2.0.1-3.el8.noarch.rpm"
+CENTOS7_PKG="https://serverscope.io/packages/rpm/python36-serverscope_benchmark-2.0.1-1.el7.noarch.rpm"
+DEB_PKG="https://serverscope.io/packages/deb/python3-serverscope-benchmark_2.0.1-1_all.deb"
+UBUNTU_16_04_DEP="https://serverscope.io/packages/deb/python3-distro_1.0.1-2_all.deb"
 
 # process command line switches
-_update=no
-_virtualenv=no
-_cleanup=no
 _email=
 _plan=
 _included_benchmarks=all
 
-while getopts "uvce:p:i:" opt; do
+while getopts "e:p:i:" opt; do
     case $opt in
-        u) _update=yes;;
-        v) _virtualenv=yes;;
-        c) _cleanup=yes;;
         e) _email=$OPTARG;;
         p) _plan=$OPTARG;;
         i) _included_benchmarks=$OPTARG;;
@@ -22,140 +21,82 @@ while getopts "uvce:p:i:" opt; do
 done
 shift $((OPTIND - 1))
 
-__install () {
-    installer="$1"
-    program="$2"
-    $installer install -y "$program"
+__install_deb_url() {
+    PKGS=""
+    apt update -y
+    for x in $@; do
+        TEMP_DEB="$(mktemp --suffix ".deb")"
+        wget -O "$TEMP_DEB" $x
+        chmod 444 $TEMP_DEB
+        PKGS="$PKGS $TEMP_DEB"
+    done
+    apt install -y $PKGS
+    rm -f "$PKGS"
 }
 
-__get_installer () {
-    installer=unknown
-    which yum > /dev/null && installer="yum"
-    which apt-get > /dev/null && installer="apt-get"
+# try hard to determine locale
+LOCALER="$(locale -a | grep -i '^c.utf' | head -1)"
+if [ -z "$LOCALER" ]; then
+    LOCALER="$(locale -a | grep -i '^en_us.utf' | head -1)"
+    if [ -z "$LOCALER" ]; then
+        echo "No any acceptable UTF8 locale has been found, add support of C.UTF8 first"
+        exit 1
+    fi
+fi
 
-    # TODO detect OpenSuse, Arch, etc
+LANG_PREFIX="LC_ALL=\"$LOCALER\""
+echo "Using locale: $LANG_PREFIX"
 
-    if [ $installer != "unknown" ]; then
-        echo $installer
+SS_BENCH_CMD="$LANG_PREFIX python3 -m serverscope_benchmark -e \"$_email\" -p \"$_plan\" -i \"$_included_benchmarks\""
+
+source /etc/os-release
+if [ "$NAME" == "CentOS Linux" ]; then
+    echo "Detected $NAME"
+    if [ "$VERSION_ID" == "8" ]; then
+        dnf install -y $CENTOS8_PKG
+    elif [ "$VERSION_ID" == "7" ]; then
+        yum install -y epel-release
+        yum install -y $CENTOS7_PKG
     else
-        return 1
+        echo "Only packages for CentOS Linux 7/8 are available for installation"
+        exit 1
     fi
-}
-
-__update_installer () {
-    installer="$1"
-    if [ "$installer" == "apt-get" ] || [ "$installer" == "yum" ]; then
-        $installer update -y
+elif [ "$NAME" == "Ubuntu" ]; then
+    echo "Detected $NAME"
+    if [ "$VERSION_CODENAME" == "xenial" ]; then
+        __install_deb_url $UBUNTU_16_04_DEP $DEB_PKG
+    elif [ "$VERSION_CODENAME" == "bionic" ] || \
+         [ "$VERSION_CODENAME" == "focal" ] || \
+         [ "$VERSION_CODENAME" == "groovy" ] || \
+         [ "$VERSION_CODENAME" == "hirsute" ]; then
+        __install_deb_url $DEB_PKG
     else
-        echo "Unknown installer"
+        echo "Only packages for Ubuntu 16.04/18.04/20.04/20.10/21.04 are available for installation"
+        exit 1
     fi
-}
-
-__failed_to_install_dependencies () {
-    echo "Can not install dependencies automatically."
-    echo
-}
-
-__ensure_python2 () {
-    installer="$1"
-    which python > /dev/null
-    if [ $? -ne 0 ]; then
-        if [ $_update == "yes" ]; then
-            __update_installer "$_installer"
-            if [ "$installer" == "apt-get" ]; then
-                __install "$installer" python-minimal
-                __install "$installer" libpython-stdlib
-            elif [ "$installer" == "yum" ]; then
-                __install "$installer" python2
-            else
-                __failed_to_install_dependencies
-            fi
-        fi
-    fi
-}
-
-__ensure_pip () {
-    which pip > /dev/null
-    if [ $? -ne 0 ]; then
-        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-        python get-pip.py
-        if [ $_cleanup == "yes" ]; then
-            rm get-pip.py
-        fi
-    fi
-}
-
-__ensure_virtualenv () {
-    which virtualenv > /dev/null
-    if [ $? -ne 0 ]; then
-        __ensure_pip
-        pip install virtualenv
-    fi
-}
-
-
-_installer=$(__get_installer)
-__ensure_python2 "$_installer"
-if [ $? -eq 0 ]; then
-    if [ $_update == "yes" ]; then
-        __update_installer "$_installer"
-
-        if [ "$_installer" == "apt-get" ]; then
-            __install "$_installer" build-essential
-            __install "$_installer" libaio-dev
-            __install "$_installer" python-dev
-            __install "$_installer" libssl-dev
-            __install "$_installer" libffi-dev
-        elif [ "$_installer" == "yum" ]; then
-            __install "$_installer" make
-            __install "$_installer" automake
-            __install "$_installer" gcc
-            __install "$_installer" gcc-c++
-            __install "$_installer" kernel-devel
-            __install "$_installer" libaio-devel
-            __install "$_installer" perl-Time-HiRes
-            __install "$_installer" python-devel
-            __install "$_installer" openssl-devel
-            __install "$_installer" libffi-devel
-        else
-            __failed_to_install_dependencies
-        fi
-    fi
-
-    __ensure_pip
-
-    # optionally create and activate python virtual environment
-    if [ $_virtualenv == "yes" ]; then
-        __ensure_virtualenv
-        serverscope_venv=$(mktemp --tmpdir=. -d serverscope.XXXXXXXXXX)
-        virtualenv "$serverscope_venv"
-        # shellcheck source=/dev/null
-        source "$serverscope_venv/bin/activate"
-    fi
-
-    # install serverscope-benchmark package
-    pip install serverscope-benchmark
-
-    # run serverscope_benchmark
-    if [ -z "$_plan" ] || [ -z "$_email" ]; then
-        echo Run serverscope manually:
-        echo
-        echo "    python -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
-        echo
+elif [ "$NAME" == "Debian GNU/Linux" ]; then
+    if [ "$VERSION_ID" == "9" ] || \
+       [ "$VERSION_ID" == "10" ]; then
+        __install_deb_url $DEB_PKG
     else
-        python -m serverscope_benchmark.__main__ -e "$_email" -p "$_plan" -i "$_included_benchmarks"
-    fi
-
-    # cleanup
-    if [ $_cleanup == "yes" ]; then
-        if [ $_virtualenv == "yes" ]; then
-            # delete virtual environment
-            rm -rf "$serverscope_venv"
-        else
-            # uninstall globally installed package
-            pip uninstall --yes serverscope-benchmark
-        fi
+        echo "Only packages for Debian 9/10 are available for installation"
+        exit 1
     fi
 else
-    __failed_to_install_dependencies
+    echo "Your distro $NAME $VERSION_ID currently is not supported by script"
+    echo "You might manually install [gcc, make, perl, python3 >= 3.5, curl, python3-setuptools, fio] + 'pip3 install serverscope-benchmark'"
+    echo "And run: '$SS_BENCH_CMD'"
+    exit 1
 fi
+
+# run serverscope_benchmark
+if [ -z "$_plan" ] || [ -z "$_email" ]; then
+    echo Run serverscope manually:
+    echo
+    echo " python3 -m serverscope_benchmark -e \"youremail@yourdomain.com\" -p \"Plan\|Hosting provider\""
+    echo
+else
+    bash -c "$SS_BENCH_CMD"
+fi
+
+exit 0

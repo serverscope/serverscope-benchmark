@@ -2,23 +2,12 @@
 
 import sys
 
-from six import print_
 from .utils import Color as c
-
-try:
-    from argparse import ArgumentParser as ArgParser
-except ImportError:
-    from optparse import OptionParser as ArgParser
+from argparse import ArgumentParser as ArgParser
 
 
 def get_parser():
     parser = ArgParser(description="ServerScope.io benchmark kit")
-    # Give optparse.OptionParser an `add_argument` method for
-    # compatibility with argparse.ArgumentParser
-    try:
-        parser.add_argument = parser.add_option
-    except AttributeError:
-        pass
 
     parser.add_argument('-p', '--plan', help='Required. Server provider and plan' +
                         ' names as follows: "Plan name|Provider name"')
@@ -28,19 +17,14 @@ def get_parser():
                         'run all of them: dd, fio, speedtest, unixbench')
     parser.add_argument('--locale', default="en")
 
-    options = parser.parse_args()
-    if isinstance(options, tuple):
-        args = options[0]
-    else:
-        args = options
+    args = parser.parse_args()
 
     if args is not dict:
         args = vars(args)
 
-    mandatories = ['plan', 'email']
-    for m in mandatories:
+    for m in ['plan', 'email']:
         if (m not in args) or args[m] is None:
-            print_("Required parameter " + c.RED + c.BOLD + m + c.RESET + " is missing")
+            print("Required parameter " + c.RED + c.BOLD + m + c.RESET + " is missing")
             parser.print_help()
             sys.exit(1)
 

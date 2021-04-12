@@ -1,0 +1,69 @@
+%global pversion 2.0.1
+%global prelease 1
+
+Name:           python3-serverscope_benchmark
+Version:        %{pversion}
+Release:        %{prelease}%{?dist}
+Summary:        A benchmarking suite
+
+License:        MIT
+URL:            https://pypi.org/project/serverscope-benchmark/
+Source0:        https://files.pythonhosted.org/packages/c5/87/0054f51fdfdac911862a0d1138944085312b836f9dbc5e3f623ab09c603a/serverscope_benchmark-%{version}.tar.gz
+
+BuildArch:      noarch
+
+%bcond_with python3_other
+
+%description
+A benchmarking suite focused on processing speed, I/O performance and
+network bandwidth.
+
+%package -n python%{python3_pkgversion}-serverscope_benchmark
+Summary:        A benchmarking suite
+BuildRequires:  python%{python3_pkgversion}-devel
+
+Requires: fio
+Requires: gcc
+Requires: make
+Requires: which
+Requires: python%{python3_pkgversion}-devel
+Requires: python%{python3_pkgversion}-requests
+Requires: python%{python3_pkgversion}-distro
+
+
+%description -n python%{python3_pkgversion}-serverscope_benchmark
+A benchmarking suite focused on processing speed, I/O performance and
+network bandwidth.
+
+This is the Python %{python3_pkgversion} build of the module.
+
+
+%prep
+%setup -q -n serverscope_benchmark-%{version}
+
+
+%build
+%py3_build
+
+
+%install
+%py3_install
+
+%files -n python%{python3_pkgversion}-serverscope_benchmark
+%license LICENSE
+%doc README.md
+%{python3_sitelib}/serverscope_benchmark*
+
+
+%changelog
+* Fri Apr 02 2021 Mikhail Campos <plageat90@gmail.com> - 2.0.1-1
+- version bump to 2.0.1
+
+* Fri Mar 26 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-3
+- switching to use the system fio requirement
+
+* Wed Mar 24 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-2
+- General code adaptation to python3.5+
+
+* Tue Mar 23 2021 Mikhail Campos <plageat90@gmail.com> - 1.0.4-1
+- Initial package
