@@ -1,5 +1,5 @@
 %global pversion 2.0.1
-%global prelease 1
+%global prelease 2
 
 Name:           python3-serverscope_benchmark
 Version:        %{pversion}
@@ -56,6 +56,9 @@ This is the Python %{python3_pkgversion} build of the module.
 
 
 %changelog
+* Mon Apr 12 2021 Mikhail Campos <plageat90@gmail.com> - 2.0.1-2
+- make fio to consume less memory
+
 * Fri Apr 02 2021 Mikhail Campos <plageat90@gmail.com> - 2.0.1-1
 - version bump to 2.0.1
 

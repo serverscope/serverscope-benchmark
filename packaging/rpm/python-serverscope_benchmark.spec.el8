@@ -1,5 +1,5 @@
 %global pversion 2.0.1
-%global prelease 3
+%global prelease 4
 
 %global modname serverscope_benchmark
 %global build_wheel 0
@@ -91,6 +91,9 @@ Python 3 version.
 
 
 %changelog
+* Mon Apr 12 2021 Mikhail Campos <plageat90@gmail.com> - 1:2.0.1-4
+- make fio to consume less memory
+
 * Thu Apr 08 2021 Mikhail Campos <plageat90@gmail.com> - 1:2.0.1-3
 - adding missing perl dep
 

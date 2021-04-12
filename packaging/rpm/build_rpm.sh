@@ -13,7 +13,8 @@ if [ "$#" -eq 1 ]; then
   fi
 else
   source /etc/os-release
-  DISTRO="el$VERSION"
+  DISTRO="el$VERSION_ID"
+  VERSION="$VERSION_ID"
 fi
 
 echo "Building for version $DISTRO"
