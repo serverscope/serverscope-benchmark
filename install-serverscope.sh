@@ -2,9 +2,9 @@
 
 # Installs serverscope
 
-CENTOS8_PKG="https://serverscope.io/packages/rpm/python3-serverscope_benchmark-2.0.1-3.el8.noarch.rpm"
-CENTOS7_PKG="https://serverscope.io/packages/rpm/python36-serverscope_benchmark-2.0.1-1.el7.noarch.rpm"
-DEB_PKG="https://serverscope.io/packages/deb/python3-serverscope-benchmark_2.0.1-1_all.deb"
+CENTOS8_PKG="https://serverscope.io/packages/rpm/python3-serverscope_benchmark-2.0.1-4.el8.noarch.rpm"
+CENTOS7_PKG="https://serverscope.io/packages/rpm/python36-serverscope_benchmark-2.0.1-2.el7.noarch.rpm"
+DEB_PKG="https://serverscope.io/packages/deb/python3-serverscope-benchmark_2.0.1.1-1_all.deb"
 UBUNTU_16_04_DEP="https://serverscope.io/packages/deb/python3-distro_1.0.1-2_all.deb"
 
 # process command line switches
