@@ -50,11 +50,11 @@ echo "Using locale: $LANG_PREFIX"
 SS_BENCH_CMD="$LANG_PREFIX python3 -m serverscope_benchmark -e \"$_email\" -p \"$_plan\" -i \"$_included_benchmarks\""
 
 source /etc/os-release
-if [ "$NAME" == "CentOS Linux" ]; then
+if [ "$ID_LIKE" == "*rhel*" ]; then
     echo "Detected $NAME"
-    if [ "$VERSION_ID" == "8" ]; then
+    if [ "$VERSION_ID" == "8*" ]; then
         dnf install -y $CENTOS8_PKG
-    elif [ "$VERSION_ID" == "7" ]; then
+    elif [ "$VERSION_ID" == "7*" ]; then
         yum install -y epel-release
         yum install -y $CENTOS7_PKG
     else
